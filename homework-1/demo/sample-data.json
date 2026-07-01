@@ -1,0 +1,40 @@
+[
+  {
+    "toAccount": "ACC-00001",
+    "amount": 1000.00,
+    "currency": "USD",
+    "type": "deposit"
+  },
+  {
+    "toAccount": "ACC-00002",
+    "amount": 500.00,
+    "currency": "EUR",
+    "type": "deposit"
+  },
+  {
+    "toAccount": "ACC-00003",
+    "amount": 75.25,
+    "currency": "GBP",
+    "type": "deposit"
+  },
+  {
+    "fromAccount": "ACC-00001",
+    "amount": 150.75,
+    "currency": "USD",
+    "type": "withdrawal"
+  },
+  {
+    "fromAccount": "ACC-00001",
+    "toAccount": "ACC-00003",
+    "amount": 200.00,
+    "currency": "USD",
+    "type": "transfer"
+  },
+  {
+    "fromAccount": "ACC-00002",
+    "toAccount": "ACC-00001",
+    "amount": 50.00,
+    "currency": "EUR",
+    "type": "transfer"
+  }
+]

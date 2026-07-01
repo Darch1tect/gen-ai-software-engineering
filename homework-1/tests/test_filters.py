@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from src.utils.storage import store
 
 ACC_1 = "ACC-00001"
@@ -8,7 +10,7 @@ ACC_3 = "ACC-00003"
 def _set_timestamp(transaction_id: str, iso_datetime: str) -> None:
     """Test helper: backdate a stored transaction's timestamp directly."""
     txn = store.get(transaction_id)
-    txn.timestamp = iso_datetime
+    txn.timestamp = datetime.fromisoformat(iso_datetime)
 
 
 def test_filter_by_account(client):
@@ -25,8 +27,10 @@ def test_filter_by_account(client):
 
     resp = client.get(f"/transactions?accountId={ACC_1}")
     assert resp.status_code == 200
-    ids = {t["id"] for t in resp.json()}
+    body = resp.json()
+    ids = {t["id"] for t in body["items"]}
     assert ids == {t1["id"], t3["id"]}
+    assert body["total"] == 2
 
 
 def test_filter_by_type(client):
@@ -41,8 +45,8 @@ def test_filter_by_type(client):
     resp = client.get("/transactions?type=transfer")
     assert resp.status_code == 200
     body = resp.json()
-    assert len(body) == 1
-    assert body[0]["id"] == t2["id"]
+    assert len(body["items"]) == 1
+    assert body["items"][0]["id"] == t2["id"]
 
 
 def test_filter_by_date_range(client):
@@ -57,7 +61,7 @@ def test_filter_by_date_range(client):
 
     resp = client.get("/transactions?from=2024-01-01&to=2024-01-31")
     assert resp.status_code == 200
-    ids = {t["id"] for t in resp.json()}
+    ids = {t["id"] for t in resp.json()["items"]}
     assert ids == {t_jan["id"]}
 
 
@@ -81,7 +85,7 @@ def test_combine_multiple_filters(client):
         f"/transactions?accountId={ACC_1}&type=transfer&from=2024-01-01&to=2024-01-31"
     )
     assert resp.status_code == 200
-    ids = {t["id"] for t in resp.json()}
+    ids = {t["id"] for t in resp.json()["items"]}
     assert ids == {t1["id"]}
 
 
@@ -121,4 +125,6 @@ def test_no_filters_returns_all(client):
     })
     resp = client.get("/transactions")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    body = resp.json()
+    assert body["total"] == 2
+    assert len(body["items"]) == 2

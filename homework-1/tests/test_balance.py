@@ -8,7 +8,7 @@ def test_balance_after_deposit(client):
     })
     resp = client.get(f"/accounts/{ACC_1}/balance")
     assert resp.status_code == 200
-    assert resp.json()["balances"] == {"USD": 100}
+    assert resp.json()["balances"] == {"USD": "100.00"}
 
 
 def test_balance_after_withdrawal(client):
@@ -19,7 +19,7 @@ def test_balance_after_withdrawal(client):
         "fromAccount": ACC_1, "amount": 40, "currency": "USD", "type": "withdrawal",
     })
     resp = client.get(f"/accounts/{ACC_1}/balance")
-    assert resp.json()["balances"] == {"USD": 60}
+    assert resp.json()["balances"] == {"USD": "60.00"}
 
 
 def test_balance_after_transfer(client):
@@ -32,8 +32,8 @@ def test_balance_after_transfer(client):
     })
     resp1 = client.get(f"/accounts/{ACC_1}/balance")
     resp2 = client.get(f"/accounts/{ACC_2}/balance")
-    assert resp1.json()["balances"] == {"USD": 125}
-    assert resp2.json()["balances"] == {"USD": 75}
+    assert resp1.json()["balances"] == {"USD": "125.00"}
+    assert resp2.json()["balances"] == {"USD": "75.00"}
 
 
 def test_balance_multi_currency(client):
@@ -44,7 +44,7 @@ def test_balance_multi_currency(client):
         "toAccount": ACC_1, "amount": 50, "currency": "EUR", "type": "deposit",
     })
     resp = client.get(f"/accounts/{ACC_1}/balance")
-    assert resp.json()["balances"] == {"USD": 100, "EUR": 50}
+    assert resp.json()["balances"] == {"USD": "100.00", "EUR": "50.00"}
 
 
 def test_balance_account_not_found(client):

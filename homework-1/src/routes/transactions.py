@@ -2,23 +2,37 @@
 
 import csv
 import io
-from datetime import date, datetime
+from datetime import date
 from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import Response
 
-from src.models.transaction import Transaction, TransactionCreate, TransactionType
+from src.models.transaction import (
+    Transaction,
+    TransactionCreate,
+    TransactionPage,
+    TransactionType,
+    ValidationErrorResponse,
+)
 from src.utils.storage import store
 from src.validators.transaction_validator import validate_account_number
 
-router = APIRouter(tags=["transactions"])
+router = APIRouter(prefix="/transactions", tags=["transactions"])
+
+_VALIDATION_ERROR_RESPONSE = {
+    status.HTTP_400_BAD_REQUEST: {
+        "model": ValidationErrorResponse,
+        "description": "Validation failed - see `details` for the offending field(s).",
+    }
+}
 
 
 @router.post(
-    "/transactions",
+    "",
     response_model=Transaction,
     status_code=status.HTTP_201_CREATED,
+    responses=_VALIDATION_ERROR_RESPONSE,
 )
 def create_transaction(payload: TransactionCreate) -> Transaction:
     """Create a new transaction. Amount must be positive (enforced by the model)."""
@@ -82,15 +96,15 @@ def _filter_transactions(
         results = [t for t in results if t.type == type_]
 
     if from_date is not None:
-        results = [t for t in results if datetime.fromisoformat(t.timestamp).date() >= from_date]
+        results = [t for t in results if t.timestamp.date() >= from_date]
 
     if to_date is not None:
-        results = [t for t in results if datetime.fromisoformat(t.timestamp).date() <= to_date]
+        results = [t for t in results if t.timestamp.date() <= to_date]
 
     return results
 
 
-@router.get("/transactions", response_model=list[Transaction])
+@router.get("", response_model=TransactionPage, responses=_VALIDATION_ERROR_RESPONSE)
 def list_transactions(
     accountId: Optional[str] = Query(
         default=None, description="Filter by account (matches fromAccount or toAccount), e.g. ACC-12345"
@@ -102,13 +116,20 @@ def list_transactions(
     to: Optional[str] = Query(
         default=None, description="End date, inclusive (YYYY-MM-DD), e.g. 2024-01-31"
     ),
-) -> list[Transaction]:
+    limit: int = Query(default=50, ge=1, le=500, description="Max number of transactions to return."),
+    offset: int = Query(default=0, ge=0, description="Number of matching transactions to skip."),
+) -> TransactionPage:
     """List transactions, optionally filtered by account, type, and/or date range.
 
     Filters combine with AND semantics: `?accountId=ACC-12345&type=transfer&from=2024-01-01&to=2024-01-31`
     returns only transfers involving ACC-12345 that happened between those two dates (inclusive).
+
+    Results are paginated: `total` reflects the full filtered count, while
+    `items` holds only the `limit`-sized page starting at `offset`.
     """
-    return _filter_transactions(accountId, type, from_, to)
+    matched = _filter_transactions(accountId, type, from_, to)
+    page = matched[offset:offset + limit]
+    return TransactionPage(items=page, total=len(matched), limit=limit, offset=offset)
 
 
 _CSV_COLUMNS = ["id", "fromAccount", "toAccount", "amount", "currency", "type", "timestamp", "status"]
@@ -116,7 +137,16 @@ _CSV_COLUMNS = ["id", "fromAccount", "toAccount", "amount", "currency", "type", 
 
 # NOTE: this route must be registered before `/transactions/{transaction_id}`
 # below, otherwise the dynamic route would match "export" as a transaction id.
-@router.get("/transactions/export")
+@router.get(
+    "/export",
+    responses={
+        status.HTTP_200_OK: {
+            "content": {"text/csv": {"schema": {"type": "string", "format": "binary"}}},
+            "description": "CSV file download (Content-Disposition: attachment).",
+        },
+        **_VALIDATION_ERROR_RESPONSE,
+    },
+)
 def export_transactions(
     format: Literal["csv"] = Query(
         default="csv", description="Export format. Only 'csv' is currently supported."
@@ -135,8 +165,10 @@ def export_transactions(
     """Export transactions as a downloadable file (currently CSV only).
 
     Accepts the same filters as `GET /transactions` (`accountId`, `type`,
-    `from`, `to`) so the export can be narrowed down the same way. An
-    unsupported `format` value returns 400.
+    `from`, `to`) so the export can be narrowed down the same way. Unlike
+    the listing endpoint, export is intentionally not paginated - the point
+    of an export is the full filtered set in one file. An unsupported
+    `format` value returns 400.
     """
     transactions = _filter_transactions(accountId, type, from_, to)
 
@@ -151,7 +183,7 @@ def export_transactions(
             f"{t.amount:.2f}",
             t.currency,
             t.type,
-            t.timestamp,
+            t.timestamp.isoformat(),
             t.status,
         ])
 
@@ -162,7 +194,11 @@ def export_transactions(
     )
 
 
-@router.get("/transactions/{transaction_id}", response_model=Transaction)
+@router.get(
+    "/{transaction_id}",
+    response_model=Transaction,
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Transaction not found."}},
+)
 def get_transaction(transaction_id: str) -> Transaction:
     """Get a single transaction by id, or 404 if it doesn't exist."""
     transaction = store.get(transaction_id)

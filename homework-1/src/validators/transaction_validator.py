@@ -7,7 +7,10 @@ validators.
 """
 
 import re
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
+
+TWO_PLACES = Decimal("0.01")
 
 # Active ISO 4217 alphabetic currency codes.
 VALID_CURRENCIES = {
@@ -39,22 +42,29 @@ def validate_account_number(value: str) -> bool:
     return bool(ACCOUNT_PATTERN.match(value))
 
 
-def validate_amount(value: float) -> float:
-    """Amount must be positive with at most 2 decimal places.
+def validate_amount(value: Decimal) -> Decimal:
+    """Amount must be a finite positive number with at most 2 decimal places.
+
+    `value` arrives already coerced to `Decimal` by Pydantic (from a JSON
+    number or string). Using `Decimal` end-to-end - rather than `float` -
+    avoids binary floating point artifacts (e.g. 0.1 + 0.2 ==
+    0.30000000000000004) when amounts are later summed for balances,
+    summaries, and interest.
 
     Raises ValueError with a user-facing message on failure. Returns the
-    value rounded to 2 decimal places on success.
+    value quantized to exactly 2 decimal places on success.
     """
+    if not value.is_finite():
+        raise ValueError("Amount must be a finite number")
     if value <= 0:
         raise ValueError("Amount must be a positive number")
-    # Compare against a fixed-precision string representation rather than
-    # raw floats, to sidestep binary floating point rounding artifacts
-    # (e.g. 0.1 + 0.2 == 0.30000000000000004).
-    fixed = format(value, ".10f").rstrip("0")
-    decimal_part = fixed.split(".")[1] if "." in fixed else ""
-    if len(decimal_part) > 2:
+    # normalize() strips insignificant trailing zeros first, so "10.50" and
+    # "10.990" are judged by their *significant* decimal places (1 and 2
+    # respectively), not by however many digits happened to be typed.
+    exponent = value.normalize().as_tuple().exponent
+    if isinstance(exponent, int) and exponent < -2:
         raise ValueError("Amount must have at most 2 decimal places")
-    return round(value, 2)
+    return value.quantize(TWO_PLACES, rounding=ROUND_HALF_UP)
 
 
 def validate_currency_code(value: str) -> str:

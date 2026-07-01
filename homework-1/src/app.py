@@ -12,6 +12,7 @@ or directly:
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 
 from src.models.transaction import ErrorResponse
@@ -65,7 +66,18 @@ async def rate_limit_middleware(request: Request, call_next):
 # ---------------------------------------------------------------------------
 # FastAPI/Pydantic raise 422 for validation errors by default; the spec asks
 # for 400 on bad input with a structured {"error", "details": [...]} body, so
-# validation errors are normalized into that shape here.
+# `RequestValidationError` (covers bad request bodies, query params, and any
+# `ValueError` raised inside a Pydantic field/model validator) is normalized
+# into that shape here.
+#
+# There is deliberately no generic `except ValueError` handler: every
+# `ValueError` this app raises today lives inside a Pydantic validator
+# (see src/validators/transaction_validator.py and
+# src/models/transaction.py), which Pydantic/FastAPI already convert into a
+# `RequestValidationError` before it ever reaches route code. A catch-all
+# `ValueError` -> 400 handler would instead risk masking a genuine server
+# bug (e.g. a stray `ValueError` from unrelated code) as an innocuous client
+# error, and would leak raw internal exception text to callers.
 
 _VALUE_ERROR_PREFIX = "Value error, "
 
@@ -97,14 +109,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-@app.exception_handler(ValueError)
-async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"error": "Validation failed", "details": [{"field": "general", "message": str(exc)}]},
-    )
-
-
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     # Some routes raise HTTPException with a structured dict detail (already
@@ -114,6 +118,48 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     else:
         content = ErrorResponse(error=exc.detail).model_dump()
     return JSONResponse(status_code=exc.status_code, content=content)
+
+
+# ---------------------------------------------------------------------------
+# OpenAPI schema
+# ---------------------------------------------------------------------------
+# FastAPI auto-generates a default "422 Validation Error" response for every
+# route that takes a body/query/path parameter. Since the exception handler
+# above rewrites those failures to 400 at runtime, the generated schema would
+# otherwise document a status code the API never actually returns. Patch the
+# schema after generation so it advertises 400 (matching runtime behavior)
+# instead of the framework default of 422.
+
+def custom_openapi() -> dict:
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+
+    for path_item in schema.get("paths", {}).values():
+        for operation in path_item.values():
+            responses = operation.get("responses")
+            if not responses or "422" not in responses:
+                continue
+            legacy_422 = responses.pop("422")
+            # Most routes already document their own accurate 400 (see the
+            # `responses=` kwargs in src/routes/*.py) - don't clobber that
+            # with the generic auto-422 schema. Only synthesize a 400 entry
+            # from the framework default where nothing better was declared.
+            if "400" not in responses:
+                legacy_422["description"] = "Validation failed"
+                responses["400"] = legacy_422
+
+    app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 # ---------------------------------------------------------------------------

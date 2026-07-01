@@ -12,10 +12,10 @@ def test_interest_basic_calculation(client):
     assert body["accountId"] == ACC_1
     assert body["rate"] == 0.05
     assert body["days"] == 30
-    assert body["principal"] == {"USD": 1000}
+    assert body["principal"] == {"USD": "1000.00"}
     # 1000 * 0.05 * (30 / 365) = 4.1095... -> rounded to 4.11
-    assert body["interest"] == {"USD": 4.11}
-    assert body["totalAmount"] == {"USD": 1004.11}
+    assert body["interest"] == {"USD": "4.11"}
+    assert body["totalAmount"] == {"USD": "1004.11"}
 
 
 def test_interest_zero_rate_yields_zero_interest(client):
@@ -25,8 +25,8 @@ def test_interest_zero_rate_yields_zero_interest(client):
     resp = client.get(f"/accounts/{ACC_1}/interest?rate=0&days=30")
     assert resp.status_code == 200
     body = resp.json()
-    assert body["interest"] == {"USD": 0}
-    assert body["totalAmount"] == {"USD": 500}
+    assert body["interest"] == {"USD": "0.00"}
+    assert body["totalAmount"] == {"USD": "500.00"}
 
 
 def test_interest_zero_days_yields_zero_interest(client):
@@ -35,7 +35,7 @@ def test_interest_zero_days_yields_zero_interest(client):
     })
     resp = client.get(f"/accounts/{ACC_1}/interest?rate=0.1&days=0")
     assert resp.status_code == 200
-    assert resp.json()["interest"] == {"USD": 0}
+    assert resp.json()["interest"] == {"USD": "0.00"}
 
 
 def test_interest_multi_currency(client):
@@ -48,8 +48,8 @@ def test_interest_multi_currency(client):
     resp = client.get(f"/accounts/{ACC_1}/interest?rate=0.1&days=365")
     body = resp.json()
     # rate=0.1, days=365 -> full year -> interest == 10% of principal exactly
-    assert body["interest"] == {"USD": 100, "EUR": 200}
-    assert body["totalAmount"] == {"USD": 1100, "EUR": 2200}
+    assert body["interest"] == {"USD": "100.00", "EUR": "200.00"}
+    assert body["totalAmount"] == {"USD": "1100.00", "EUR": "2200.00"}
 
 
 def test_interest_negative_rate_rejected(client):

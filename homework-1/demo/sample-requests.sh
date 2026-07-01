@@ -72,6 +72,9 @@ curl -s "$BASE_URL/transactions?accountId=ACC-00001" | pretty
 step "Filter: combined accountId + type + date range"
 curl -s "$BASE_URL/transactions?accountId=ACC-00001&type=transfer&from=2020-01-01&to=2030-12-31" | pretty
 
+step "Pagination: first 2 transactions (GET /transactions?limit=2&offset=0)"
+curl -s "$BASE_URL/transactions?limit=2&offset=0" | pretty
+
 if [ -n "$LAST_ID" ]; then
     step "Get a single transaction by id (GET /transactions/$LAST_ID)"
     curl -s "$BASE_URL/transactions/$LAST_ID" | pretty
@@ -111,6 +114,11 @@ step "Invalid account format -> 400"
 curl -s -X POST "$BASE_URL/transactions" \
     -H "Content-Type: application/json" \
     -d '{"toAccount": "acc-1", "amount": 10, "currency": "USD", "type": "deposit"}' | pretty
+
+step "Unexpected field in request body -> 400"
+curl -s -X POST "$BASE_URL/transactions" \
+    -H "Content-Type: application/json" \
+    -d '{"toAccount": "ACC-00001", "amount": 10, "currency": "USD", "type": "deposit", "notes": "not allowed"}' | pretty
 
 step "Unknown transaction id -> 404"
 curl -s "$BASE_URL/transactions/does-not-exist" | pretty

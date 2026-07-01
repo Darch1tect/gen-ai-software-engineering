@@ -2,9 +2,10 @@
 
 import uuid
 from datetime import datetime, timezone
-from typing import List, Literal, Optional
+from decimal import Decimal
+from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
 from src.validators.transaction_validator import (
     validate_account_field,
@@ -16,8 +17,24 @@ TransactionType = Literal["deposit", "withdrawal", "transfer"]
 TransactionStatus = Literal["pending", "completed", "failed"]
 
 
+def _serialize_money_dict(value: Dict[str, Decimal]) -> Dict[str, str]:
+    """Render a currency -> Decimal mapping as currency -> fixed-2-decimal string.
+
+    Money is serialized as a string (not a JSON number) so exact precision
+    survives the wire format regardless of client-side float handling -
+    the same reasoning that keeps `Decimal` (not `float`) in the Python
+    models in the first place.
+    """
+    return {currency: format(amount, ".2f") for currency, amount in value.items()}
+
+
 class TransactionCreate(BaseModel):
     """Request body for creating a new transaction."""
+
+    # Unknown fields are rejected rather than silently ignored - important
+    # for a financial API where a typo'd field name should never be dropped
+    # on the floor without the caller finding out.
+    model_config = ConfigDict(extra="forbid")
 
     fromAccount: Optional[str] = Field(
         default=None, description="Source account. Required for withdrawal/transfer."
@@ -25,7 +42,7 @@ class TransactionCreate(BaseModel):
     toAccount: Optional[str] = Field(
         default=None, description="Destination account. Required for deposit/transfer."
     )
-    amount: float = Field(
+    amount: Decimal = Field(
         ..., description="Transaction amount, must be positive with at most 2 decimal places."
     )
     currency: str = Field(..., description="ISO 4217 currency code, e.g. USD, EUR, GBP.")
@@ -33,7 +50,7 @@ class TransactionCreate(BaseModel):
 
     @field_validator("amount")
     @classmethod
-    def _validate_amount(cls, value: float) -> float:
+    def _validate_amount(cls, value: Decimal) -> Decimal:
         return validate_amount(value)
 
     @field_validator("currency")
@@ -65,13 +82,17 @@ class Transaction(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     fromAccount: Optional[str] = None
     toAccount: Optional[str] = None
-    amount: float
+    amount: Decimal
     currency: str
     type: TransactionType
-    timestamp: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
     )
     status: TransactionStatus = "completed"
+
+    @field_serializer("amount", when_used="json")
+    def _serialize_amount(self, value: Decimal) -> str:
+        return format(value, ".2f")
 
     @classmethod
     def from_create(cls, data: TransactionCreate) -> "Transaction":
@@ -84,37 +105,54 @@ class Transaction(BaseModel):
         )
 
 
+class TransactionPage(BaseModel):
+    """Paginated response for GET /transactions."""
+
+    items: List[Transaction]
+    total: int = Field(description="Total number of transactions matching the filters (before pagination).")
+    limit: int = Field(description="Page size that was applied.")
+    offset: int = Field(description="Number of matching transactions skipped before this page.")
+
+
 class BalanceResponse(BaseModel):
     """Response for the account balance endpoint."""
 
     accountId: str
-    balances: dict[str, float] = Field(
-        description="Balance per currency, e.g. {'USD': 120.5, 'EUR': -30.0}"
+    balances: Dict[str, Decimal] = Field(
+        description="Balance per currency, e.g. {'USD': '120.50', 'EUR': '-30.00'}"
     )
+
+    @field_serializer("balances", when_used="json")
+    def _serialize_balances(self, value: Dict[str, Decimal]) -> Dict[str, str]:
+        return _serialize_money_dict(value)
 
 
 class AccountSummary(BaseModel):
     """Response for the account transaction summary endpoint."""
 
     accountId: str
-    totalDeposits: dict[str, float] = Field(
+    totalDeposits: Dict[str, Decimal] = Field(
         description=(
             "Total amount credited to the account per currency - 'deposit' "
             "transactions plus the incoming side of 'transfer' transactions, "
-            "e.g. {'USD': 250.0}"
+            "e.g. {'USD': '250.00'}"
         )
     )
-    totalWithdrawals: dict[str, float] = Field(
+    totalWithdrawals: Dict[str, Decimal] = Field(
         description=(
             "Total amount debited from the account per currency - 'withdrawal' "
             "transactions plus the outgoing side of 'transfer' transactions, "
-            "e.g. {'USD': 40.0}"
+            "e.g. {'USD': '40.00'}"
         )
     )
     transactionCount: int = Field(description="Number of transactions involving this account.")
-    mostRecentTransactionDate: Optional[str] = Field(
-        default=None, description="ISO 8601 timestamp of the most recent transaction, if any."
+    mostRecentTransactionDate: Optional[datetime] = Field(
+        default=None, description="Timestamp of the most recent transaction, if any."
     )
+
+    @field_serializer("totalDeposits", "totalWithdrawals", when_used="json")
+    def _serialize_money(self, value: Dict[str, Decimal]) -> Dict[str, str]:
+        return _serialize_money_dict(value)
 
 
 class InterestResponse(BaseModel):
@@ -123,15 +161,19 @@ class InterestResponse(BaseModel):
     accountId: str
     rate: float = Field(description="Annual interest rate used in the calculation, e.g. 0.05 for 5%.")
     days: int = Field(description="Number of days the interest was calculated over.")
-    principal: dict[str, float] = Field(
-        description="Current balance per currency, used as principal, e.g. {'USD': 1000.0}"
+    principal: Dict[str, Decimal] = Field(
+        description="Current balance per currency, used as principal, e.g. {'USD': '1000.00'}"
     )
-    interest: dict[str, float] = Field(
+    interest: Dict[str, Decimal] = Field(
         description="Simple interest per currency: principal * rate * (days / 365)."
     )
-    totalAmount: dict[str, float] = Field(
+    totalAmount: Dict[str, Decimal] = Field(
         description="principal + interest per currency."
     )
+
+    @field_serializer("principal", "interest", "totalAmount", when_used="json")
+    def _serialize_money(self, value: Dict[str, Decimal]) -> Dict[str, str]:
+        return _serialize_money_dict(value)
 
 
 class ValidationErrorDetail(BaseModel):

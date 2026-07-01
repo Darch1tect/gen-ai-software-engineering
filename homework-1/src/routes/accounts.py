@@ -1,14 +1,37 @@
 """Routes for account-level views: balance, summary, and simple interest."""
 
+from decimal import ROUND_HALF_UP, Decimal
+
 from fastapi import APIRouter, HTTPException, Query, status
 
-from src.models.transaction import AccountSummary, BalanceResponse, InterestResponse, Transaction
+from src.models.transaction import (
+    AccountSummary,
+    BalanceResponse,
+    InterestResponse,
+    Transaction,
+    ValidationErrorResponse,
+)
 from src.utils.storage import store
 from src.validators.transaction_validator import validate_account_number
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
-DAYS_PER_YEAR = 365
+DAYS_PER_YEAR = Decimal("365")
+_TWO_PLACES = Decimal("0.01")
+
+_VALIDATION_ERROR_RESPONSE = {
+    status.HTTP_400_BAD_REQUEST: {
+        "model": ValidationErrorResponse,
+        "description": "Validation failed - see `details` for the offending field(s).",
+    }
+}
+_ACCOUNT_NOT_FOUND_RESPONSE = {
+    status.HTTP_404_NOT_FOUND: {"description": "Account has no transactions on record."}
+}
+
+
+def _round_money(value: Decimal) -> Decimal:
+    return value.quantize(_TWO_PLACES, rounding=ROUND_HALF_UP)
 
 
 def _require_known_account(account_id: str) -> list[Transaction]:
@@ -38,24 +61,26 @@ def _require_known_account(account_id: str) -> list[Transaction]:
     return account_transactions
 
 
-def _compute_balances(account_transactions: list[Transaction], account_id: str) -> dict[str, float]:
+def _compute_balances(account_transactions: list[Transaction], account_id: str) -> dict[str, Decimal]:
     """Net balance per currency from completed transactions.
 
     deposit credits toAccount; withdrawal debits fromAccount; transfer debits
     fromAccount and credits toAccount. Only 'completed' transactions count.
     """
-    balances: dict[str, float] = {}
+    balances: dict[str, Decimal] = {}
     for t in account_transactions:
         if t.status != "completed":
             continue
         if t.toAccount == account_id:
-            balances[t.currency] = balances.get(t.currency, 0.0) + t.amount
+            balances[t.currency] = balances.get(t.currency, Decimal("0")) + t.amount
         if t.fromAccount == account_id:
-            balances[t.currency] = balances.get(t.currency, 0.0) - t.amount
-    return {currency: round(value, 2) for currency, value in balances.items()}
+            balances[t.currency] = balances.get(t.currency, Decimal("0")) - t.amount
+    return {currency: _round_money(value) for currency, value in balances.items()}
 
 
-@router.get("/{account_id}/balance", response_model=BalanceResponse)
+@router.get("/{account_id}/balance", response_model=BalanceResponse, responses={
+    **_VALIDATION_ERROR_RESPONSE, **_ACCOUNT_NOT_FOUND_RESPONSE,
+})
 def get_account_balance(account_id: str) -> BalanceResponse:
     """Compute an account's balance per currency from completed transactions.
 
@@ -70,7 +95,9 @@ def get_account_balance(account_id: str) -> BalanceResponse:
     return BalanceResponse(accountId=account_id, balances=balances)
 
 
-@router.get("/{account_id}/summary", response_model=AccountSummary)
+@router.get("/{account_id}/summary", response_model=AccountSummary, responses={
+    **_VALIDATION_ERROR_RESPONSE, **_ACCOUNT_NOT_FOUND_RESPONSE,
+})
 def get_account_summary(account_id: str) -> AccountSummary:
     """Summarize an account's transaction history.
 
@@ -85,18 +112,18 @@ def get_account_summary(account_id: str) -> AccountSummary:
     """
     account_transactions = _require_known_account(account_id)
 
-    total_deposits: dict[str, float] = {}
-    total_withdrawals: dict[str, float] = {}
+    total_deposits: dict[str, Decimal] = {}
+    total_withdrawals: dict[str, Decimal] = {}
     for t in account_transactions:
         if t.status != "completed":
             continue
         if t.toAccount == account_id:
-            total_deposits[t.currency] = total_deposits.get(t.currency, 0.0) + t.amount
+            total_deposits[t.currency] = total_deposits.get(t.currency, Decimal("0")) + t.amount
         if t.fromAccount == account_id:
-            total_withdrawals[t.currency] = total_withdrawals.get(t.currency, 0.0) + t.amount
+            total_withdrawals[t.currency] = total_withdrawals.get(t.currency, Decimal("0")) + t.amount
 
-    total_deposits = {currency: round(value, 2) for currency, value in total_deposits.items()}
-    total_withdrawals = {currency: round(value, 2) for currency, value in total_withdrawals.items()}
+    total_deposits = {currency: _round_money(value) for currency, value in total_deposits.items()}
+    total_withdrawals = {currency: _round_money(value) for currency, value in total_withdrawals.items()}
 
     most_recent = max((t.timestamp for t in account_transactions), default=None)
 
@@ -109,7 +136,9 @@ def get_account_summary(account_id: str) -> AccountSummary:
     )
 
 
-@router.get("/{account_id}/interest", response_model=InterestResponse)
+@router.get("/{account_id}/interest", response_model=InterestResponse, responses={
+    **_VALIDATION_ERROR_RESPONSE, **_ACCOUNT_NOT_FOUND_RESPONSE,
+})
 def calculate_account_interest(
     account_id: str,
     rate: float = Query(
@@ -128,17 +157,25 @@ def calculate_account_interest(
     `principal` is the account's current balance (same computation as
     /balance), so the same 400 (bad accountId format) / 404 (unknown
     account) rules apply. `rate` and `days` must be non-negative.
+
+    The calculation itself is done in `Decimal` (principal and the
+    computed interest are money; `rate` stays a plain `float` ratio and is
+    converted via `Decimal(str(rate))` - going through the same decimal
+    string representation the client sent - rather than `Decimal(rate)`,
+    which would bake in binary floating point noise).
     """
     account_transactions = _require_known_account(account_id)
     principal = _compute_balances(account_transactions, account_id)
 
-    time_fraction = days / DAYS_PER_YEAR
+    rate_decimal = Decimal(str(rate))
+    time_fraction = Decimal(days) / DAYS_PER_YEAR
+
     interest = {
-        currency: round(amount * rate * time_fraction, 2)
+        currency: _round_money(amount * rate_decimal * time_fraction)
         for currency, amount in principal.items()
     }
     total_amount = {
-        currency: round(principal[currency] + interest[currency], 2)
+        currency: _round_money(principal[currency] + interest[currency])
         for currency in principal
     }
 

@@ -15,7 +15,7 @@ def test_create_deposit_returns_201(client):
     assert body["status"] == "completed"
     assert body["fromAccount"] is None
     assert body["toAccount"] == ACC_1
-    assert body["amount"] == 100
+    assert body["amount"] == "100.00"
     assert body["currency"] == "USD"
     assert "timestamp" in body
 
@@ -94,7 +94,7 @@ def test_amount_with_two_decimal_places_accepted(client):
         "type": "deposit",
     })
     assert resp.status_code == 201
-    assert resp.json()["amount"] == 99.99
+    assert resp.json()["amount"] == "99.99"
 
 
 def test_invalid_currency_rejected(client):
@@ -168,7 +168,71 @@ def test_list_transactions(client):
     })
     resp = client.get("/transactions")
     assert resp.status_code == 200
-    assert len(resp.json()) == 2
+    body = resp.json()
+    assert body["total"] == 2
+    assert len(body["items"]) == 2
+    assert body["limit"] == 50
+    assert body["offset"] == 0
+
+
+def test_list_transactions_pagination(client):
+    for i in range(5):
+        client.post("/transactions", json={
+            "toAccount": ACC_1, "amount": 10 + i, "currency": "USD", "type": "deposit",
+        })
+
+    resp = client.get("/transactions?limit=2&offset=0")
+    body = resp.json()
+    assert body["total"] == 5
+    assert body["limit"] == 2
+    assert body["offset"] == 0
+    assert len(body["items"]) == 2
+
+    resp2 = client.get("/transactions?limit=2&offset=4")
+    body2 = resp2.json()
+    assert body2["total"] == 5
+    assert len(body2["items"]) == 1
+
+    # No overlap between the two pages fetched above.
+    first_page_ids = {t["id"] for t in body["items"]}
+    last_page_ids = {t["id"] for t in body2["items"]}
+    assert first_page_ids.isdisjoint(last_page_ids)
+
+
+def test_list_transactions_invalid_pagination_rejected(client):
+    resp = client.get("/transactions?limit=0")
+    assert resp.status_code == 400
+
+    resp2 = client.get("/transactions?limit=1000")
+    assert resp2.status_code == 400
+
+    resp3 = client.get("/transactions?offset=-1")
+    assert resp3.status_code == 400
+
+
+def test_create_transaction_rejects_unknown_fields(client):
+    resp = client.post("/transactions", json={
+        "toAccount": ACC_1,
+        "amount": 10,
+        "currency": "USD",
+        "type": "deposit",
+        "unexpectedField": "should not be accepted",
+    })
+    assert resp.status_code == 400
+    body = resp.json()
+    assert body["error"] == "Validation failed"
+    assert any(d["field"] == "unexpectedField" for d in body["details"])
+
+
+def test_amount_nan_and_infinity_rejected(client):
+    for bad_amount in ["NaN", "Infinity", "-Infinity"]:
+        resp = client.post("/transactions", json={
+            "toAccount": ACC_1,
+            "amount": bad_amount,
+            "currency": "USD",
+            "type": "deposit",
+        })
+        assert resp.status_code == 400, f"amount={bad_amount!r} should be rejected"
 
 
 def test_get_transaction_by_id(client):

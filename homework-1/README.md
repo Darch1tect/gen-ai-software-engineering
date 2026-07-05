@@ -1,5 +1,7 @@
 # Transactions API
 
+**Автор:** Vitalii Roditieliev
+
 Базовий REST API для транзакцій на FastAPI з зберіганням даних в пам'яті (без бази даних).
 
 ## Структура

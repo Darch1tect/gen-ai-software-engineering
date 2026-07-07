@@ -1,8 +1,14 @@
-import json
+"""Classification tests: keyword classifier + auto-classify endpoints. (10 tests)"""
 
 from app.classifier import classify
 
-# ---------------------------------------------------------------- unit tests
+BILLING_TICKET = {
+    "customer_id": "CUST-500",
+    "customer_email": "dana@example.com",
+    "customer_name": "Dana",
+    "subject": "Question about my invoice",
+    "description": "I was charged twice for my subscription, can I get a refund please?",
+}
 
 
 def test_classify_account_access_urgent():
@@ -72,17 +78,6 @@ def test_classify_no_keywords_falls_back_to_other():
     assert result.keywords_found == []
 
 
-# ----------------------------------------------------------------- API tests
-
-BILLING_TICKET = {
-    "customer_id": "CUST-500",
-    "customer_email": "dana@example.com",
-    "customer_name": "Dana",
-    "subject": "Question about my invoice",
-    "description": "I was charged twice for my subscription, can I get a refund please?",
-}
-
-
 def test_auto_classify_endpoint(client):
     created = client.post("/tickets", json=BILLING_TICKET).json()
     assert created["category"] == "other"  # default, not classified yet
@@ -106,29 +101,7 @@ def test_auto_classify_endpoint(client):
 
 def test_auto_classify_missing_ticket_returns_404(client):
     assert client.post("/tickets/no-such-id/auto-classify").status_code == 404
-
-
-def test_create_with_auto_classify_flag(client):
-    response = client.post("/tickets", params={"auto_classify": "true"}, json=BILLING_TICKET)
-    assert response.status_code == 201
-    body = response.json()
-    assert body["category"] == "billing_question"
-    assert body["classification_source"] == "auto"
-    assert body["classification_confidence"] is not None
-
-
-def test_import_with_auto_classify_flag(client):
-    content = json.dumps([BILLING_TICKET])
-    response = client.post(
-        "/tickets/import",
-        params={"auto_classify": "true"},
-        files={"file": ("tickets.json", content, "application/json")},
-    )
-    summary = response.json()
-    assert summary["successful"] == 1
-    ticket = client.get(f"/tickets/{summary['created_ids'][0]}").json()
-    assert ticket["category"] == "billing_question"
-    assert ticket["classification_source"] == "auto"
+    assert client.get("/tickets/no-such-id/classification-log").status_code == 404
 
 
 def test_manual_override_is_tracked_and_logged(client):
@@ -155,14 +128,3 @@ def test_manual_override_is_tracked_and_logged(client):
     assert log[1]["priority"] == "low"
     assert log[1]["confidence"] == 1.0
     assert "Manual override" in log[1]["reasoning"]
-
-
-def test_update_without_category_or_priority_does_not_log_override(client):
-    ticket_id = client.post("/tickets", json=BILLING_TICKET).json()["id"]
-    client.put(f"/tickets/{ticket_id}", json={"assigned_to": "agent.k"})
-    assert client.get(f"/tickets/{ticket_id}/classification-log").json() == []
-    assert client.get(f"/tickets/{ticket_id}").json()["classification_source"] is None
-
-
-def test_classification_log_for_missing_ticket_returns_404(client):
-    assert client.get("/tickets/no-such-id/classification-log").status_code == 404

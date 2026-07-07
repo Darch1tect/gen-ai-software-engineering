@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -6,6 +8,14 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 from app.main import app
+
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+CONTENT_TYPES = {
+    "csv": "text/csv",
+    "json": "application/json",
+    "xml": "application/xml",
+}
 
 
 @pytest.fixture()
@@ -29,6 +39,32 @@ def client():
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def upload(client):
+    """Upload raw content to POST /tickets/import as a multipart file."""
+
+    def _upload(filename, content, content_type=None, **params):
+        if content_type is None:
+            content_type = CONTENT_TYPES.get(filename.rsplit(".", 1)[-1], "text/plain")
+        return client.post(
+            "/tickets/import",
+            params=params,
+            files={"file": (filename, content, content_type)},
+        )
+
+    return _upload
+
+
+@pytest.fixture()
+def upload_fixture(upload):
+    """Upload one of the files in tests/fixtures/ by name."""
+
+    def _upload_fixture(name, **params):
+        return upload(name, (FIXTURES_DIR / name).read_bytes(), **params)
+
+    return _upload_fixture
 
 
 @pytest.fixture()

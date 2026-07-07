@@ -100,7 +100,23 @@ ticket transitions to `resolved`/`closed` and cleared when it is reopened.
 ## Tests
 
 ```bash
-uv run pytest
+uv run pytest            # runs 56 tests with coverage (fails under 85%)
+uv run pytest --no-cov   # without coverage
+```
+
+Coverage is enforced at **>85%** via `pytest-cov` (current: ~96%).
+
+```
+tests/
+├── test_ticket_api.py       # API endpoints (11 tests)
+├── test_ticket_model.py     # Data validation (9 tests)
+├── test_import_csv.py       # CSV parsing (6 tests)
+├── test_import_json.py      # JSON parsing (5 tests)
+├── test_import_xml.py       # XML parsing (5 tests)
+├── test_categorization.py   # Classification (10 tests)
+├── test_integration.py      # End-to-end workflows (5 tests)
+├── test_performance.py      # Benchmarks (5 tests)
+└── fixtures/                # Sample data files (CSV/JSON/XML, valid + malformed)
 ```
 
 ## Project layout

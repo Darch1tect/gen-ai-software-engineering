@@ -1,3 +1,6 @@
+"""API endpoint tests: CRUD, filtering, pagination, status codes. (11 tests)"""
+
+
 def test_create_ticket_returns_201_with_defaults(client, ticket_payload):
     response = client.post("/tickets", json=ticket_payload)
     assert response.status_code == 201
@@ -9,24 +12,7 @@ def test_create_ticket_returns_201_with_defaults(client, ticket_payload):
     assert body["tags"] == ["login", "password"]
     assert body["metadata"]["source"] == "web_form"
     assert body["created_at"]
-
-
-def test_create_ticket_rejects_invalid_email(client, ticket_payload):
-    ticket_payload["customer_email"] = "not-an-email"
-    response = client.post("/tickets", json=ticket_payload)
-    assert response.status_code == 422
-
-
-def test_create_ticket_rejects_short_description(client, ticket_payload):
-    ticket_payload["description"] = "too short"
-    response = client.post("/tickets", json=ticket_payload)
-    assert response.status_code == 422
-
-
-def test_create_ticket_rejects_bad_enum(client, ticket_payload):
-    ticket_payload["category"] = "nonsense"
-    response = client.post("/tickets", json=ticket_payload)
-    assert response.status_code == 422
+    assert body["classification_source"] is None
 
 
 def test_get_ticket(client, ticket_payload):
@@ -37,7 +23,9 @@ def test_get_ticket(client, ticket_payload):
 
 
 def test_get_missing_ticket_returns_404(client):
-    assert client.get("/tickets/no-such-id").status_code == 404
+    response = client.get("/tickets/no-such-id")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"]
 
 
 def test_list_tickets_with_filters(client, ticket_payload):
@@ -61,11 +49,19 @@ def test_list_tickets_with_filters(client, ticket_payload):
     assert len(client.get("/tickets", params={"tag": "login"}).json()) == 1
 
 
+def test_list_tickets_pagination(client, ticket_payload):
+    for i in range(3):
+        client.post("/tickets", json=dict(ticket_payload, customer_id=f"CUST-{i}"))
+    assert len(client.get("/tickets", params={"limit": 2}).json()) == 2
+    assert len(client.get("/tickets", params={"limit": 2, "offset": 2}).json()) == 1
+    assert client.get("/tickets", params={"limit": 0}).status_code == 422
+
+
 def test_list_tickets_rejects_bad_filter_value(client):
     assert client.get("/tickets", params={"status": "bogus"}).status_code == 422
 
 
-def test_update_ticket(client, ticket_payload):
+def test_update_ticket_resolve_and_reopen(client, ticket_payload):
     ticket_id = client.post("/tickets", json=ticket_payload).json()["id"]
     response = client.put(
         f"/tickets/{ticket_id}",
@@ -87,12 +83,14 @@ def test_update_missing_ticket_returns_404(client):
 
 def test_update_rejects_unknown_field(client, ticket_payload):
     ticket_id = client.post("/tickets", json=ticket_payload).json()["id"]
-    response = client.put(f"/tickets/{ticket_id}", json={"not_a_field": 1})
-    assert response.status_code == 422
+    assert client.put(f"/tickets/{ticket_id}", json={"not_a_field": 1}).status_code == 422
 
 
-def test_delete_ticket(client, ticket_payload):
+def test_delete_ticket_returns_204(client, ticket_payload):
     ticket_id = client.post("/tickets", json=ticket_payload).json()["id"]
     assert client.delete(f"/tickets/{ticket_id}").status_code == 204
     assert client.get(f"/tickets/{ticket_id}").status_code == 404
-    assert client.delete(f"/tickets/{ticket_id}").status_code == 404
+
+
+def test_delete_missing_ticket_returns_404(client):
+    assert client.delete("/tickets/no-such-id").status_code == 404

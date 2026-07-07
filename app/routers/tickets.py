@@ -1,16 +1,23 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from pydantic import ValidationError
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app import models, schemas
+from app.classifier import classify
 from app.database import get_db
 from app.models import utcnow
 from app.parsers import FileParseError, detect_format, parse_file
 
+logger = logging.getLogger("app.tickets")
+
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
+
+MANUAL_OVERRIDE_CONFIDENCE = 1.0
 
 
 def _to_orm_kwargs(data: schemas.TicketCreate) -> dict:
@@ -19,18 +26,81 @@ def _to_orm_kwargs(data: schemas.TicketCreate) -> dict:
     return kwargs
 
 
+def _auto_classify(ticket: models.Ticket, db: Session) -> schemas.ClassificationResult:
+    """Classify the ticket, apply the result and append an audit log row."""
+    result = classify(ticket.subject, ticket.description)
+    ticket.category = result.category.value
+    ticket.priority = result.priority.value
+    ticket.classification_confidence = result.confidence
+    ticket.classification_source = schemas.ClassificationSource.auto.value
+    ticket.classified_at = utcnow()
+    db.add(models.ClassificationLog(
+        ticket_id=ticket.id,
+        source=schemas.ClassificationSource.auto.value,
+        category=result.category.value,
+        priority=result.priority.value,
+        confidence=result.confidence,
+        reasoning=result.reasoning,
+        keywords=result.keywords_found,
+    ))
+    return schemas.ClassificationResult(
+        category=result.category,
+        priority=result.priority,
+        confidence=result.confidence,
+        reasoning=result.reasoning,
+        keywords_found=result.keywords_found,
+    )
+
+
+def _log_manual_override(ticket: models.Ticket, overridden: list[str], db: Session) -> None:
+    reasoning = (
+        f"Manual override via PUT /tickets/{ticket.id}: "
+        + ", ".join(f"{f}={getattr(ticket, f)}" for f in overridden)
+    )
+    ticket.classification_source = schemas.ClassificationSource.manual.value
+    ticket.classification_confidence = MANUAL_OVERRIDE_CONFIDENCE
+    ticket.classified_at = utcnow()
+    db.add(models.ClassificationLog(
+        ticket_id=ticket.id,
+        source=schemas.ClassificationSource.manual.value,
+        category=ticket.category,
+        priority=ticket.priority,
+        confidence=MANUAL_OVERRIDE_CONFIDENCE,
+        reasoning=reasoning,
+        keywords=[],
+    ))
+    logger.info(reasoning)
+
+
 @router.post("", response_model=schemas.TicketOut, status_code=status.HTTP_201_CREATED)
-def create_ticket(payload: schemas.TicketCreate, db: Session = Depends(get_db)):
+def create_ticket(
+    payload: schemas.TicketCreate,
+    auto_classify: bool = Query(
+        default=False,
+        description="Classify the ticket on creation; overrides any category/priority in the body",
+    ),
+    db: Session = Depends(get_db),
+):
     ticket = models.Ticket(**_to_orm_kwargs(payload))
     if ticket.status in (schemas.Status.resolved, schemas.Status.closed):
         ticket.resolved_at = utcnow()
     db.add(ticket)
+    if auto_classify:
+        db.flush()  # assign the id used in the audit log row
+        _auto_classify(ticket, db)
     db.commit()
     return ticket
 
 
 @router.post("/import", response_model=schemas.ImportSummary)
-async def import_tickets(file: UploadFile, db: Session = Depends(get_db)):
+async def import_tickets(
+    file: UploadFile,
+    auto_classify: bool = Query(
+        default=False,
+        description="Classify every imported ticket; overrides category/priority from the file",
+    ),
+    db: Session = Depends(get_db),
+):
     file_format = detect_format(file.filename, file.content_type)
     if file_format is None:
         raise HTTPException(
@@ -69,6 +139,8 @@ async def import_tickets(file: UploadFile, db: Session = Depends(get_db)):
             ticket.resolved_at = utcnow()
         db.add(ticket)
         db.flush()
+        if auto_classify:
+            _auto_classify(ticket, db)
         successful_ids.append(ticket.id)
 
     db.commit()
@@ -117,6 +189,28 @@ def list_tickets(
     return tickets
 
 
+@router.post("/{ticket_id}/auto-classify", response_model=schemas.ClassificationResult)
+def auto_classify_ticket(ticket_id: str, db: Session = Depends(get_db)):
+    ticket = db.get(models.Ticket, ticket_id)
+    if ticket is None:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    result = _auto_classify(ticket, db)
+    ticket.updated_at = utcnow()
+    db.commit()
+    return result
+
+
+@router.get("/{ticket_id}/classification-log", response_model=list[schemas.ClassificationLogOut])
+def get_classification_log(ticket_id: str, db: Session = Depends(get_db)):
+    if db.get(models.Ticket, ticket_id) is None:
+        raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found")
+    return db.scalars(
+        select(models.ClassificationLog)
+        .where(models.ClassificationLog.ticket_id == ticket_id)
+        .order_by(models.ClassificationLog.id)
+    ).all()
+
+
 @router.get("/{ticket_id}", response_model=schemas.TicketOut)
 def get_ticket(ticket_id: str, db: Session = Depends(get_db)):
     ticket = db.get(models.Ticket, ticket_id)
@@ -143,6 +237,10 @@ def update_ticket(ticket_id: str, payload: schemas.TicketUpdate, db: Session = D
                 ticket.resolved_at = utcnow()
         else:
             ticket.resolved_at = None
+
+    overridden = [f for f in ("category", "priority") if f in changes]
+    if overridden:
+        _log_manual_override(ticket, overridden, db)
     ticket.updated_at = utcnow()
 
     db.commit()

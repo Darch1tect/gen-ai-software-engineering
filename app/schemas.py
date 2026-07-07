@@ -42,6 +42,11 @@ class DeviceType(str, Enum):
     tablet = "tablet"
 
 
+class ClassificationSource(str, Enum):
+    auto = "auto"
+    manual = "manual"
+
+
 class TicketMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -100,6 +105,31 @@ class TicketOut(BaseModel):
     assigned_to: str | None
     tags: list[str]
     metadata: TicketMetadata | None = Field(default=None, validation_alias="meta")
+    classification_confidence: float | None = None
+    classification_source: ClassificationSource | None = None
+    classified_at: datetime | None = None
+
+
+class ClassificationResult(BaseModel):
+    category: Category
+    priority: Priority
+    confidence: float = Field(ge=0, le=1)
+    reasoning: str
+    keywords_found: list[str]
+
+
+class ClassificationLogOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    ticket_id: str
+    source: ClassificationSource
+    category: Category
+    priority: Priority
+    confidence: float | None
+    reasoning: str
+    keywords: list[str]
+    created_at: datetime
 
 
 class ImportError_(BaseModel):

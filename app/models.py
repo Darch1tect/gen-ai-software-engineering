@@ -34,3 +34,26 @@ class Ticket(Base):
     tags: Mapped[list] = mapped_column(JSON, default=list)
     # attribute is `meta` because `metadata` is reserved by SQLAlchemy's DeclarativeBase
     meta: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
+    classification_confidence: Mapped[float | None] = mapped_column(nullable=True)
+    classification_source: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    classified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ClassificationLog(Base):
+    """Audit trail of every classification decision, auto or manual.
+
+    ticket_id is intentionally not a foreign key: audit rows must survive
+    ticket deletion.
+    """
+
+    __tablename__ = "classification_log"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    ticket_id: Mapped[str] = mapped_column(String(36), index=True)
+    source: Mapped[str] = mapped_column(String(10))  # "auto" | "manual"
+    category: Mapped[str] = mapped_column(String(50))
+    priority: Mapped[str] = mapped_column(String(20))
+    confidence: Mapped[float | None] = mapped_column(nullable=True)
+    reasoning: Mapped[str] = mapped_column(Text)
+    keywords: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

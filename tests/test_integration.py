@@ -1,6 +1,7 @@
-"""End-to-end workflow tests spanning several endpoints. (5 tests)"""
+"""End-to-end workflow tests spanning several endpoints. (7 tests)"""
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 
 from tests.conftest import FIXTURES_DIR
 
@@ -91,3 +92,78 @@ def test_partial_import_then_fix_failed_record(client, upload_fixture):
     })
     assert fixed.status_code == 201
     assert len(client.get("/tickets").json()) == 2
+
+
+def test_concurrent_operations(file_client):
+    """20+ simultaneous requests: parallel creates, then mixed reads/updates."""
+    client = file_client
+    workers = 20
+    total = 24
+
+    def create(i):
+        return client.post("/tickets", json={
+            "customer_id": f"CUST-C{i}",
+            "customer_email": f"concurrent{i}@example.com",
+            "customer_name": f"Concurrent User {i}",
+            "subject": f"Concurrent ticket {i}",
+            "description": "Created from a concurrent worker to test simultaneous requests.",
+        }).status_code
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        create_codes = list(pool.map(create, range(total)))
+    assert create_codes == [201] * total
+
+    tickets = client.get("/tickets", params={"limit": 100}).json()
+    assert len(tickets) == total
+    ids = [t["id"] for t in tickets]
+
+    # interleaved reads and writes against the same set of tickets
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        read_futures = [pool.submit(client.get, f"/tickets/{tid}") for tid in ids]
+        update_futures = [
+            pool.submit(client.put, f"/tickets/{tid}", json={"status": "in_progress"})
+            for tid in ids
+        ]
+    assert all(f.result().status_code == 200 for f in read_futures)
+    assert all(f.result().status_code == 200 for f in update_futures)
+
+    final = client.get("/tickets", params={"limit": 100}).json()
+    assert len(final) == total
+    assert all(t["status"] == "in_progress" for t in final)
+
+
+def test_combined_filtering_by_category_and_priority(client, ticket_payload):
+    combos = [
+        ("billing_question", "high"),
+        ("billing_question", "low"),
+        ("technical_issue", "high"),
+        ("feature_request", "medium"),
+        ("billing_question", "high"),
+    ]
+    for i, (category, priority) in enumerate(combos):
+        response = client.post("/tickets", json=dict(
+            ticket_payload,
+            customer_id=f"CUST-F{i}",
+            subject=f"{category} / {priority} ticket {i}",
+            category=category,
+            priority=priority,
+        ))
+        assert response.status_code == 201
+
+    matched = client.get(
+        "/tickets", params={"category": "billing_question", "priority": "high"}
+    ).json()
+    assert len(matched) == 2
+    assert all(
+        t["category"] == "billing_question" and t["priority"] == "high" for t in matched
+    )
+
+    # each filter alone is wider than the combination
+    assert len(client.get("/tickets", params={"category": "billing_question"}).json()) == 3
+    assert len(client.get("/tickets", params={"priority": "high"}).json()) == 3
+    # combination with no matches is empty, not an error
+    none = client.get(
+        "/tickets", params={"category": "feature_request", "priority": "urgent"}
+    )
+    assert none.status_code == 200
+    assert none.json() == []

@@ -24,17 +24,19 @@ Write `docs/TESTING_GUIDE.md` with:
 
 1. **Test pyramid** — Mermaid diagram mapping the actual suite to levels:
    unit (model validation 9, classifier unit portion of categorization),
-   service/API (endpoint + import tests), integration workflows (5),
-   performance (5); 56 tests total. Note what is intentionally absent
-   (no UI layer → no E2E browser tier).
+   service/API (endpoint + import tests), integration workflows (7,
+   incl. a 20-worker concurrency test on a file-backed DB), performance
+   (5); 58 tests total. Note what is intentionally absent (no UI layer →
+   no E2E browser tier).
 2. **How to run tests** — full suite (coverage gate fails under 85%),
    `--no-cov`, single file, single test, verbose benchmark run
    (`uv run pytest tests/test_performance.py -v --no-cov`); how to read the
    coverage table and the current ~96% baseline; what to do when the gate
    trips.
 3. **Test suite map** — table: file → scope → count → what it protects
-   (11/9/6/5/5/10/5/5), plus `fixtures/` contents and the conftest fixtures
-   with one line on when to use each.
+   (11/9/6/5/5/10/7/5), plus `fixtures/` contents and the conftest fixtures
+   (incl. `file_client` for concurrency) with one line on when to use each.
+   Embed the coverage screenshot `docs/screenshots/test_coverage.png`.
 4. **Sample test data locations** — `tests/fixtures/` (small, wired into
    automated tests) vs `samples/` (large, for manual/exploratory work:
    50 CSV / 20 JSON / 30 XML valid; `invalid/` with per-record-broken and

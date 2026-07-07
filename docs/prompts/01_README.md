@@ -42,8 +42,9 @@ Rewrite `README.md` (repo root) with exactly these sections:
    `tickets.db` is created on startup and must be deleted after schema
    changes (no migrations yet).
 4. **How to run tests** — `uv run pytest` (coverage gate at 85%),
-   `--no-cov` variant, how to run a single file; current suite: 56 tests,
-   ~96% coverage.
+   `--no-cov` variant, how to run a single file; current suite: 58 tests,
+   ~96% coverage; embed the coverage screenshot
+   `docs/screenshots/test_coverage.png`.
 5. **Project structure** — annotated tree of `app/`, `tests/`, `samples/`,
    `scripts/`; one line per entry saying *why it exists*, not just what it is.
 

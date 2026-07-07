@@ -42,6 +42,36 @@ def client():
 
 
 @pytest.fixture()
+def file_client(tmp_path):
+    """Client backed by a file-based SQLite DB with a real connection pool.
+
+    The default `client` fixture shares a single in-memory connection
+    (StaticPool), which cannot serve truly concurrent requests. This one
+    gives every request its own connection, so it is safe for
+    multi-threaded tests.
+    """
+    engine = create_engine(
+        f"sqlite:///{tmp_path / 'concurrent.db'}",
+        connect_args={"check_same_thread": False, "timeout": 30},
+    )
+    TestingSession = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    Base.metadata.create_all(bind=engine)
+
+    def override_get_db():
+        db = TestingSession()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+    engine.dispose()
+
+
+@pytest.fixture()
 def upload(client):
     """Upload raw content to POST /tickets/import as a multipart file."""
 

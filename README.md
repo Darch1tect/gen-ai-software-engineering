@@ -118,11 +118,14 @@ curl -X POST http://127.0.0.1:8000/tickets/import -F 'file=@samples/sample_ticke
 ## Tests
 
 ```bash
-uv run pytest            # runs 56 tests with coverage (fails under 85%)
+uv run pytest            # runs 58 tests with coverage (fails under 85%)
 uv run pytest --no-cov   # without coverage
 ```
 
-Coverage is enforced at **>85%** via `pytest-cov` (current: ~96%).
+Coverage is enforced at **>85%** via `pytest-cov` (current: ~96%,
+see [docs/screenshots/test_coverage.png](docs/screenshots/test_coverage.png)):
+
+![Test coverage](docs/screenshots/test_coverage.png)
 
 ```
 tests/
@@ -132,10 +135,15 @@ tests/
 ├── test_import_json.py      # JSON parsing (5 tests)
 ├── test_import_xml.py       # XML parsing (5 tests)
 ├── test_categorization.py   # Classification (10 tests)
-├── test_integration.py      # End-to-end workflows (5 tests)
+├── test_integration.py      # End-to-end workflows (7 tests)
 ├── test_performance.py      # Benchmarks (5 tests)
 └── fixtures/                # Sample data files (CSV/JSON/XML, valid + malformed)
 ```
+
+End-to-end coverage includes the full ticket lifecycle, bulk import with
+auto-classification verification, concurrent operations (24 parallel creates
+plus interleaved reads/updates through 20 workers against a file-backed DB),
+and combined category+priority filtering.
 
 ## Project layout
 

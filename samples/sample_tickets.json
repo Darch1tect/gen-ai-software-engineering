@@ -1,0 +1,345 @@
+[
+  {
+    "customer_id": "CUST-1050",
+    "customer_email": "iryna.boyko50@example.com",
+    "customer_name": "Iryna Boyko",
+    "subject": "Refund still not received",
+    "description": "I cancelled two weeks ago and the promised refund has not reached my credit card.",
+    "category": "billing_question",
+    "priority": "high",
+    "status": "new",
+    "tags": [
+      "invoice",
+      "refund"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Edge 125"
+    },
+    "assigned_to": "agent.olha"
+  },
+  {
+    "customer_id": "CUST-1051",
+    "customer_email": "ann.boyko51@example.com",
+    "customer_name": "Ann Boyko",
+    "subject": "Update payment method",
+    "description": "I need to change the credit card used for billing before the next payment date.",
+    "category": "billing_question",
+    "priority": "urgent",
+    "status": "waiting_customer",
+    "tags": [],
+    "metadata": {
+      "source": "email"
+    },
+    "assigned_to": "agent.smith"
+  },
+  {
+    "customer_id": "CUST-1052",
+    "customer_email": "ann.lysenko52@example.com",
+    "customer_name": "Ann Lysenko",
+    "subject": "Please add dark mode",
+    "description": "It would be nice to add support for a dark theme, this is just a suggestion.",
+    "category": "feature_request",
+    "priority": "medium",
+    "status": "waiting_customer",
+    "tags": [],
+    "metadata": {
+      "source": "chat",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1053",
+    "customer_email": "iryna.bondar53@example.com",
+    "customer_name": "Iryna Bondar",
+    "subject": "Feature request: CSV export",
+    "description": "An enhancement idea: please add an export of the ticket list to CSV files.",
+    "category": "feature_request",
+    "priority": "medium",
+    "status": "in_progress",
+    "tags": [
+      "idea",
+      "ui"
+    ],
+    "metadata": {
+      "source": "api",
+      "browser": "Firefox 127",
+      "device_type": "tablet"
+    },
+    "assigned_to": "agent.smith"
+  },
+  {
+    "customer_id": "CUST-1054",
+    "customer_email": "kate.lysenko54@example.com",
+    "customer_name": "Kate Lysenko",
+    "subject": "Improvement for search",
+    "description": "I suggest an improvement so search understands partial matches and typos better.",
+    "category": "feature_request",
+    "priority": "medium",
+    "status": "new",
+    "tags": [],
+    "metadata": {
+      "source": "api",
+      "browser": "Firefox 127",
+      "device_type": "tablet"
+    },
+    "assigned_to": "agent.olha"
+  },
+  {
+    "customer_id": "CUST-1055",
+    "customer_email": "marta.bondar55@example.com",
+    "customer_name": "Marta Bondar",
+    "subject": "Crash when uploading avatar",
+    "description": "Steps to reproduce:\n1. Open profile\n2. Upload a PNG avatar\nExpected behavior: image saves. Actual behavior: the app crashes with an error.",
+    "category": "bug_report",
+    "priority": "urgent",
+    "status": "in_progress",
+    "tags": [],
+    "metadata": {
+      "source": "chat",
+      "browser": "Firefox 127",
+      "device_type": "mobile"
+    }
+  },
+  {
+    "customer_id": "CUST-1056",
+    "customer_email": "nina.ponomarenko56@example.com",
+    "customer_name": "Nina Ponomarenko",
+    "subject": "Wrong totals in report",
+    "description": "Steps to reproduce:\n1. Create two invoices\n2. Open the monthly report\nExpected result: totals match. Actual result: the regression shows doubled numbers.",
+    "category": "bug_report",
+    "priority": "medium",
+    "status": "closed",
+    "tags": [
+      "repro"
+    ],
+    "metadata": {
+      "source": "web_form",
+      "browser": "Firefox 127"
+    },
+    "assigned_to": "agent.olha"
+  },
+  {
+    "customer_id": "CUST-1057",
+    "customer_email": "lesia.lysenko57@example.com",
+    "customer_name": "Lesia Lysenko",
+    "subject": "Broken link in welcome email",
+    "description": "The getting started link returns a 404 page, reproduction is stable on every send.",
+    "category": "bug_report",
+    "priority": "medium",
+    "status": "waiting_customer",
+    "tags": [],
+    "metadata": {
+      "source": "api",
+      "browser": "Safari 18"
+    },
+    "assigned_to": "agent.smith"
+  },
+  {
+    "customer_id": "CUST-1058",
+    "customer_email": "oleg.tkachuk58@example.com",
+    "customer_name": "Oleg Tkachuk",
+    "subject": "General question about limits",
+    "description": "Where can I read about plan limits and how many seats my team can use in total?",
+    "category": "other",
+    "priority": "medium",
+    "status": "resolved",
+    "tags": [
+      "feedback"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Chrome 126"
+    }
+  },
+  {
+    "customer_id": "CUST-1059",
+    "customer_email": "dmytro.lysenko59@example.com",
+    "customer_name": "Dmytro Lysenko",
+    "subject": "Thanks for the great support",
+    "description": "Just wanted to leave positive feedback about the recent onboarding experience.",
+    "category": "other",
+    "priority": "medium",
+    "status": "waiting_customer",
+    "tags": [],
+    "metadata": {
+      "source": "phone",
+      "device_type": "desktop"
+    },
+    "assigned_to": "agent.olha"
+  },
+  {
+    "customer_id": "CUST-1060",
+    "customer_email": "petro.boyko60@example.com",
+    "customer_name": "Petro Boyko",
+    "subject": "Can't log into my account",
+    "description": "After the last password reset my login attempts fail with an authentication error.",
+    "category": "account_access",
+    "priority": "medium",
+    "status": "in_progress",
+    "tags": [],
+    "metadata": {
+      "source": "chat",
+      "browser": "Firefox 127",
+      "device_type": "desktop"
+    },
+    "assigned_to": "agent.kova"
+  },
+  {
+    "customer_id": "CUST-1061",
+    "customer_email": "sofia.lysenko61@example.com",
+    "customer_name": "Sofia Lysenko",
+    "subject": "2FA code never arrives",
+    "description": "The two-factor verification code is not delivered to my phone, I am locked out.",
+    "category": "account_access",
+    "priority": "medium",
+    "status": "closed",
+    "tags": [
+      "2fa"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Safari 18"
+    },
+    "assigned_to": "agent.olha"
+  },
+  {
+    "customer_id": "CUST-1062",
+    "customer_email": "oleg.shevchenko62@example.com",
+    "customer_name": "Oleg Shevchenko",
+    "subject": "Account locked after vacation",
+    "description": "My account locked message appears every time I try to sign in with valid credentials.",
+    "category": "account_access",
+    "priority": "urgent",
+    "status": "new",
+    "tags": [
+      "login",
+      "password"
+    ],
+    "metadata": {
+      "source": "email",
+      "browser": "Chrome 126",
+      "device_type": "desktop"
+    },
+    "assigned_to": "agent.smith"
+  },
+  {
+    "customer_id": "CUST-1063",
+    "customer_email": "olena.savchenko63@example.com",
+    "customer_name": "Olena Savchenko",
+    "subject": "Session expires too fast",
+    "description": "The session expired notice appears after two minutes and forces me to log in again.",
+    "category": "account_access",
+    "priority": "low",
+    "status": "new",
+    "tags": [],
+    "metadata": {
+      "source": "email",
+      "browser": "Firefox 127"
+    },
+    "assigned_to": "agent.smith"
+  },
+  {
+    "customer_id": "CUST-1064",
+    "customer_email": "iryna.melnyk64@example.com",
+    "customer_name": "Iryna Melnyk",
+    "subject": "Dashboard shows an error",
+    "description": "The analytics dashboard shows a timeout error and sometimes crashes during load.",
+    "category": "technical_issue",
+    "priority": "high",
+    "status": "new",
+    "tags": [
+      "crash"
+    ],
+    "metadata": {
+      "source": "phone",
+      "device_type": "desktop"
+    },
+    "assigned_to": "agent.olha"
+  },
+  {
+    "customer_id": "CUST-1065",
+    "customer_email": "olena.melnyk65@example.com",
+    "customer_name": "Olena Melnyk",
+    "subject": "Export to PDF not working",
+    "description": "Exporting reports fails with an exception, the button simply does not work anymore.",
+    "category": "technical_issue",
+    "priority": "urgent",
+    "status": "resolved",
+    "tags": [
+      "sync",
+      "crash"
+    ],
+    "metadata": {
+      "source": "email",
+      "browser": "Chrome 126",
+      "device_type": "mobile"
+    },
+    "assigned_to": "agent.kova"
+  },
+  {
+    "customer_id": "CUST-1066",
+    "customer_email": "ann.savchenko66@example.com",
+    "customer_name": "Ann Savchenko",
+    "subject": "Page freezes on save",
+    "description": "The editor freezes when I press save and the browser tab becomes unresponsive.",
+    "category": "technical_issue",
+    "priority": "low",
+    "status": "new",
+    "tags": [],
+    "metadata": {
+      "source": "api"
+    },
+    "assigned_to": "agent.olha"
+  },
+  {
+    "customer_id": "CUST-1067",
+    "customer_email": "nina.shevchenko67@example.com",
+    "customer_name": "Nina Shevchenko",
+    "subject": "Sync is very slow",
+    "description": "Synchronization between devices is slow and often ends with a timeout failure.",
+    "category": "technical_issue",
+    "priority": "low",
+    "status": "closed",
+    "tags": [
+      "sync"
+    ],
+    "metadata": {
+      "source": "web_form",
+      "browser": "Edge 125",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1068",
+    "customer_email": "marta.boyko68@example.com",
+    "customer_name": "Marta Boyko",
+    "subject": "Charged twice this month",
+    "description": "My invoice shows a double charge for the same subscription period, I need a refund.",
+    "category": "billing_question",
+    "priority": "medium",
+    "status": "in_progress",
+    "tags": [],
+    "metadata": {
+      "source": "phone",
+      "browser": "Safari 18"
+    },
+    "assigned_to": "agent.kova"
+  },
+  {
+    "customer_id": "CUST-1069",
+    "customer_email": "nina.tkachuk69@example.com",
+    "customer_name": "Nina Tkachuk",
+    "subject": "Question about renewal price",
+    "description": "The renewal pricing on my latest receipt differs from the plan I originally bought.",
+    "category": "billing_question",
+    "priority": "medium",
+    "status": "waiting_customer",
+    "tags": [],
+    "metadata": {
+      "source": "api",
+      "browser": "Edge 125",
+      "device_type": "mobile"
+    }
+  }
+]

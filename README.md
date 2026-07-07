@@ -97,6 +97,24 @@ Validation rules: `customer_email` must be a valid email; `subject` 1–200 char
 `priority=medium`, `status=new`. `resolved_at` is set automatically when a
 ticket transitions to `resolved`/`closed` and cleared when it is reopened.
 
+## Sample data
+
+`samples/` contains ready-to-import datasets for manual checks
+(100 valid tickets total), regenerable with
+`PYTHONPATH=. uv run python scripts/generate_samples.py`:
+
+- `sample_tickets.csv` — 50 tickets
+- `sample_tickets.json` — 20 tickets
+- `sample_tickets.xml` — 30 tickets
+- `invalid/` — negative-test files: records with broken fields
+  (`invalid_tickets.csv/json/xml` → partial-import summaries with error
+  details), plus structurally bad files (`malformed.json`, `malformed.xml`,
+  `empty.csv`, `not_utf8.csv`, `unsupported.txt` → HTTP 400)
+
+```bash
+curl -X POST http://127.0.0.1:8000/tickets/import -F 'file=@samples/sample_tickets.csv'
+```
+
 ## Tests
 
 ```bash

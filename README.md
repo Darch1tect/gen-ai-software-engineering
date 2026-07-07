@@ -1,160 +1,163 @@
 # Intelligent Customer Support System
 
-REST API for importing, classifying and prioritizing customer support tickets.
+A REST service that turns a pile of incoming support requests into an
+organized, prioritized ticket queue. It ingests tickets one by one over
+HTTP or in bulk from CSV / JSON / XML files, validates every record,
+automatically assigns a category and priority with an explainable keyword
+engine, and keeps a full audit trail of every classification decision —
+automatic or human.
 
-**Stack:** Python 3.12+ · FastAPI · Pydantic v2 · SQLAlchemy 2 · SQLite · pytest · uv
+The service is built for teams that receive support requests from many
+channels in many shapes: a web form here, an exported spreadsheet there.
+Instead of trusting the incoming data, it validates each record
+independently — one broken row never sinks a 1000-row import — and reports
+exactly which records failed and why. Classification is deterministic and
+transparent: every decision comes with the matched keywords, a confidence
+score, and a plain-language reasoning string, so an agent can always see
+*why* a ticket landed in a queue and override it when the machine got it
+wrong.
 
-## Quick start
+**Features**
+
+- Full ticket CRUD with filtering (status, priority, category, customer,
+  assignee, tag, text search) and pagination
+- Bulk import from CSV, JSON, and XML with automatic format detection
+- Strict validation on every path: email format, string length bounds,
+  closed enums (Pydantic v2)
+- Per-record import error reporting: `total / successful / failed` summary
+  with field-level messages for every rejected record
+- Graceful handling of malformed files — broken JSON/XML, wrong encoding,
+  empty or oversized uploads all return a clear 4xx, never a stack trace
+- Auto-classification into 6 categories and 4 priority levels with a
+  confidence score (0–1), human-readable reasoning, and the keywords found
+- Optional classify-on-create: `?auto_classify=true` on single create and
+  bulk import
+- Manual override tracking: editing category/priority via `PUT` marks the
+  ticket as human-classified (confidence 1.0)
+- Append-only audit log of all classification decisions, queryable per
+  ticket
+- 58 tests (unit → API → integration → benchmarks) with an enforced
+  85% coverage gate
+
+**Stack:** Python 3.12+ · FastAPI · Pydantic v2 · SQLAlchemy 2 · SQLite ·
+pytest · uv
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Client([Client])
+
+    subgraph API["FastAPI · app/"]
+        Router["Router<br/>routers/tickets.py"]
+        Schemas["Validation<br/>schemas.py (Pydantic)"]
+        Parsers["Parsers<br/>parsers.py<br/>CSV / JSON / XML"]
+        Classifier["Classifier<br/>classifier.py<br/>keywords → category, priority,<br/>confidence, reasoning"]
+        ORM["ORM<br/>models.py (SQLAlchemy)"]
+    end
+
+    DB[("SQLite<br/>tickets")]
+    Audit[("SQLite<br/>classification_log")]
+    Log["App log"]
+
+    Client -->|"HTTP /tickets*"| Router
+    Router -->|"validate each record"| Schemas
+    Router -->|"file bytes"| Parsers
+    Parsers -->|"raw records"| Schemas
+    Router -->|"subject + description"| Classifier
+    Classifier -->|"decision"| Router
+    Router --> ORM
+    ORM --> DB
+    Router -->|"every auto/manual decision"| Audit
+    Classifier -.->|"INFO line"| Log
+```
+
+Every request enters through the router, every piece of data passes through
+Pydantic validation before touching the ORM, and every classification
+decision is written twice: onto the ticket itself and into the append-only
+`classification_log` table.
+
+## API at a glance
+
+| Method | Endpoint                           | Description                              |
+|--------|------------------------------------|------------------------------------------|
+| POST   | `/tickets`                         | Create a ticket (201); `?auto_classify=true` to classify on the fly |
+| POST   | `/tickets/import`                  | Bulk import CSV/JSON/XML; returns per-record summary |
+| GET    | `/tickets`                         | List with filters & pagination           |
+| GET    | `/tickets/{id}`                    | Get one ticket (404 if missing)          |
+| PUT    | `/tickets/{id}`                    | Partial update; category/priority edits are tracked as manual overrides |
+| DELETE | `/tickets/{id}`                    | Delete (204)                             |
+| POST   | `/tickets/{id}/auto-classify`      | Classify and apply; returns category, priority, confidence, reasoning, keywords |
+| GET    | `/tickets/{id}/classification-log` | Audit trail of classification decisions  |
+| GET    | `/health`                          | Liveness probe                           |
+
+Full request/response details: interactive Swagger UI at `/docs`, and
+`docs/API_REFERENCE.md`.
+
+## Installation and setup
+
+Prerequisites: [uv](https://docs.astral.sh/uv/) (installs the right Python
+version itself — no system Python required):
 
 ```bash
-uv sync                          # install dependencies
-uv run uvicorn app.main:app --reload
+brew install uv          # macOS; see uv docs for other platforms
 ```
 
-Interactive API docs: http://127.0.0.1:8000/docs
-
-## Endpoints
-
-| Method | Endpoint                            | Description                              |
-|--------|-------------------------------------|------------------------------------------|
-| POST   | `/tickets`                          | Create a new support ticket (201)        |
-| POST   | `/tickets/import`                   | Bulk import from CSV / JSON / XML        |
-| GET    | `/tickets`                          | List tickets with filtering & pagination |
-| GET    | `/tickets/{id}`                     | Get a specific ticket (404 if missing)   |
-| PUT    | `/tickets/{id}`                     | Partial update of a ticket               |
-| DELETE | `/tickets/{id}`                     | Delete a ticket (204)                    |
-| POST   | `/tickets/{id}/auto-classify`       | Classify the ticket and apply the result |
-| GET    | `/tickets/{id}/classification-log`  | Audit trail of classification decisions  |
-
-### Filtering (`GET /tickets`)
-
-Query params: `status`, `priority`, `category`, `customer_id`, `assigned_to`,
-`tag`, `search` (substring in subject/description), `limit` (default 50), `offset`.
-
-### Bulk import (`POST /tickets/import`)
-
-Multipart upload, field name `file`. Format is detected from the file extension
-(`.csv`, `.json`, `.xml`) or Content-Type. Each record is validated
-independently — one bad record never fails the whole file. Response:
-
-```json
-{
-  "total_records": 3, "successful": 2, "failed": 1,
-  "errors": [{"record": 2, "errors": ["customer_email: value is not a valid email address"]}],
-  "created_ids": ["..."]
-}
-```
-
-Malformed files (broken JSON/XML, non-UTF-8, empty, unsupported format) return
-`400` with a message explaining what is wrong.
-
-**CSV** — header row required; `tags` are `;`-separated; metadata is passed as
-flat `source`, `browser`, `device_type` columns.
-**JSON** — an array of ticket objects, or `{"tickets": [...]}`.
-**XML** — `<tickets>` root with `<ticket>` children; `<tags><tag>…</tag></tags>`,
-`<metadata><source>…</source></metadata>`.
-
-## Auto-classification
-
-`POST /tickets/{id}/auto-classify` runs a deterministic keyword classifier
-([app/classifier.py](app/classifier.py)) and applies the result to the ticket:
-
-```json
-{
-  "category": "billing_question",
-  "priority": "medium",
-  "confidence": 0.81,
-  "reasoning": "Category 'billing_question' matched keywords: invoice, refund, charge (score 14 of 14 across all categories). No priority keywords matched; defaulting to 'medium'.",
-  "keywords_found": ["invoice", "refund", "charge"]
-}
-```
-
-- **Categories** are scored by weighted keyword matches (subject counts double).
-  Reproduction signals (`steps to reproduce`, `expected/actual behavior`,
-  numbered step lists) push a defect from `technical_issue` to `bug_report`.
-  No matches → `other` with confidence 0.3.
-- **Priority rules** (first match wins): urgent — `can't access`, `critical`,
-  `production down`, `security`…; high — `important`, `blocking`, `asap`;
-  low — `minor`, `cosmetic`, `suggestion`; default — `medium`.
-- **Confidence** (0–1) grows with the winning category's dominance and the
-  number of distinct keywords matched, capped at 0.95.
-- **Auto-run on creation**: `POST /tickets?auto_classify=true` and
-  `POST /tickets/import?auto_classify=true` classify on the fly (overriding
-  any category/priority supplied in the payload/file).
-- **Stored on the ticket**: `classification_confidence`,
-  `classification_source` (`auto`/`manual`), `classified_at`.
-- **Manual override**: updating `category`/`priority` via `PUT` marks the
-  ticket `manual` with confidence 1.0.
-- **Decision log**: every decision (auto and manual) is appended to the
-  `classification_log` table — readable via
-  `GET /tickets/{id}/classification-log` — and written to the app log.
-
-## Ticket model
-
-Validation rules: `customer_email` must be a valid email; `subject` 1–200 chars;
-`description` 10–2000 chars; `category`, `priority`, `status`, `metadata.source`,
-`metadata.device_type` are strict enums. Defaults: `category=other`,
-`priority=medium`, `status=new`. `resolved_at` is set automatically when a
-ticket transitions to `resolved`/`closed` and cleared when it is reopened.
-
-## Sample data
-
-`samples/` contains ready-to-import datasets for manual checks
-(100 valid tickets total), regenerable with
-`PYTHONPATH=. uv run python scripts/generate_samples.py`:
-
-- `sample_tickets.csv` — 50 tickets
-- `sample_tickets.json` — 20 tickets
-- `sample_tickets.xml` — 30 tickets
-- `invalid/` — negative-test files: records with broken fields
-  (`invalid_tickets.csv/json/xml` → partial-import summaries with error
-  details), plus structurally bad files (`malformed.json`, `malformed.xml`,
-  `empty.csv`, `not_utf8.csv`, `unsupported.txt` → HTTP 400)
+Install and run:
 
 ```bash
-curl -X POST http://127.0.0.1:8000/tickets/import -F 'file=@samples/sample_tickets.csv'
+uv sync                              # creates .venv and installs everything
+uv run uvicorn app.main:app --reload # serves on http://127.0.0.1:8000
 ```
 
-## Tests
+Open http://127.0.0.1:8000/docs for Swagger UI. Try a bulk import:
 
 ```bash
-uv run pytest            # runs 58 tests with coverage (fails under 85%)
-uv run pytest --no-cov   # without coverage
+curl -X POST http://127.0.0.1:8000/tickets/import?auto_classify=true \
+     -F 'file=@samples/sample_tickets.csv'
 ```
 
-Coverage is enforced at **>85%** via `pytest-cov` (current: ~96%,
-see [docs/screenshots/test_coverage.png](docs/screenshots/test_coverage.png)):
+The SQLite database (`tickets.db`) is created automatically on startup.
+There are no migrations yet — after pulling a change that alters the
+schema, delete `tickets.db` and let the app recreate it.
+
+## How to run tests
+
+```bash
+uv run pytest                                  # full suite + coverage gate (fails under 85%)
+uv run pytest --no-cov                         # faster, no coverage
+uv run pytest tests/test_ticket_api.py --no-cov       # one file
+uv run pytest tests/test_performance.py -v --no-cov   # benchmarks, verbose
+```
+
+Current state: **58 tests, ~96% coverage** (gate: 85%).
 
 ![Test coverage](docs/screenshots/test_coverage.png)
 
-```
-tests/
-├── test_ticket_api.py       # API endpoints (11 tests)
-├── test_ticket_model.py     # Data validation (9 tests)
-├── test_import_csv.py       # CSV parsing (6 tests)
-├── test_import_json.py      # JSON parsing (5 tests)
-├── test_import_xml.py       # XML parsing (5 tests)
-├── test_categorization.py   # Classification (10 tests)
-├── test_integration.py      # End-to-end workflows (7 tests)
-├── test_performance.py      # Benchmarks (5 tests)
-└── fixtures/                # Sample data files (CSV/JSON/XML, valid + malformed)
-```
-
-End-to-end coverage includes the full ticket lifecycle, bulk import with
-auto-classification verification, concurrent operations (24 parallel creates
-plus interleaved reads/updates through 20 workers against a file-backed DB),
-and combined category+priority filtering.
-
-## Project layout
+## Project structure
 
 ```
 app/
-  main.py        # FastAPI app, lifespan (creates tables)
-  database.py    # engine, session, Base
-  models.py      # SQLAlchemy Ticket model
-  schemas.py     # Pydantic schemas + enums
-  parsers.py     # CSV / JSON / XML parsers
-  routers/
-    tickets.py   # all /tickets endpoints
+  main.py             # FastAPI app assembly, logging config, lifespan (creates tables)
+  database.py         # engine/session factory; DATABASE_URL overridable via env
+  models.py           # SQLAlchemy tables: Ticket + append-only ClassificationLog
+  schemas.py          # single source of truth for validation rules and enums
+  parsers.py          # CSV/JSON/XML → raw dicts; file-level errors only, records
+                      #   are validated later so one bad row can't kill an import
+  classifier.py       # deterministic keyword engine; returns category, priority,
+                      #   confidence, reasoning, keywords — fully explainable
+  routers/tickets.py  # all endpoints; import loop, audit logging, override tracking
 tests/
+  conftest.py         # isolated in-memory DB per test; file-backed DB for the
+                      #   concurrency test; upload helpers
+  test_*.py           # 8 files: API, model, CSV/JSON/XML import, categorization,
+                      #   integration workflows, performance benchmarks
+  fixtures/           # small data files wired into the automated tests
+samples/              # 100 valid tickets (50 CSV / 20 JSON / 30 XML) + invalid/
+                      #   set for negative testing — for manual and demo runs
+scripts/
+  generate_samples.py # regenerates samples/ and validates them against the app
+docs/
+  prompts/            # per-audience documentation generation plan
+  screenshots/        # coverage report screenshot
 ```

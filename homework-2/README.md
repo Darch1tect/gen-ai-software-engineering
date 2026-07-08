@@ -162,4 +162,7 @@ scripts/
 docs/
   prompts/            # per-audience documentation generation plan
   screenshots/        # coverage report screenshot
+demo/
+  demo.sh             # self-contained runnable demo (own server + throwaway DB)
+  transcript.md       # captured output of a full demo run
 ```

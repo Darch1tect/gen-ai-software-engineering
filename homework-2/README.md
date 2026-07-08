@@ -138,6 +138,31 @@ Current state: **58 tests, ~96% coverage** (gate: 85%).
 
 ![Test coverage](docs/screenshots/test_coverage.png)
 
+## Development workflow (Definition of Done)
+
+Every increment in this project — features, test restructuring, review
+fixes, even documentation — went through the same checklist before being
+committed:
+
+1. **Code and tests land together.** New behavior arrives with its tests;
+   every bug fix includes a regression test that fails on the old code
+   (e.g. the tag-filter pagination test).
+2. **Full suite before every commit** — `uv run pytest` with the 85%
+   coverage gate. Any test/coverage number quoted in a commit message or
+   document comes from a run just executed, never from memory.
+3. **Live end-to-end verification.** Start the real server and exercise
+   the change with real requests and files — including the negative paths
+   (400 malformed, 404 missing, 413 oversized) — before calling it done.
+   Tests passing is necessary, not sufficient.
+4. **Clean up dev artifacts**: stop the server, delete the throwaway
+   database, leave the working tree clean.
+5. **Docs follow the code.** Any document whose facts the change touched
+   (counts, paths, documented trade-offs) is updated in the same commit —
+   stale documentation is treated as a bug.
+6. **Commits state verified facts.** The message records what was done
+   *and what was verified*, so the git history reads as evidence, not
+   claims.
+
 ## Project structure
 
 ```

@@ -1,5 +1,7 @@
 # Testing Guide
 
+**Author:** Vitalii Roditieliev
+
 Handbook for QA engineers working on the support-ticket system. It covers
 running the suite, what each test protects, manual test data, a scripted
 manual-testing pass over a live server, performance benchmarks, and the

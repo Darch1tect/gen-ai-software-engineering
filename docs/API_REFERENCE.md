@@ -1,5 +1,7 @@
 # API Reference
 
+**Author:** Vitalii Roditieliev
+
 REST API for support tickets: CRUD, bulk import (CSV/JSON/XML), and automatic
 classification.
 

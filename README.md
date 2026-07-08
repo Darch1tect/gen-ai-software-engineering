@@ -1,5 +1,7 @@
 # Intelligent Customer Support System
 
+**Author:** Vitalii Roditieliev
+
 A REST service that turns a pile of incoming support requests into an
 organized, prioritized ticket queue. It ingests tickets one by one over
 HTTP or in bulk from CSV / JSON / XML files, validates every record,

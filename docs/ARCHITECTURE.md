@@ -1,5 +1,7 @@
 # Architecture
 
+**Author:** Vitalii Roditieliev
+
 Audience: technical leads deciding whether this design is sound, where it
 will break under growth, and what to invest in next. This document assesses;
 it does not sell.

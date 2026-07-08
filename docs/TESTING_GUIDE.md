@@ -279,6 +279,17 @@ expected result was observed as written.
 - [ ] `samples/invalid/empty.csv` → `400`, `"Uploaded file is empty"`
 - [ ] `samples/invalid/not_utf8.csv` → `400`, `"File is not valid UTF-8 text"`
 - [ ] `samples/invalid/unsupported.txt` → `400`, `"Unsupported file format..."`
+- [ ] Oversized upload (> 10 MB; generate a throwaway file, do not commit it):
+
+      ```bash
+      head -1 samples/sample_tickets.csv > /tmp/oversized.csv
+      dd if=/dev/zero bs=1048576 count=11 | tr '\0' 'x' >> /tmp/oversized.csv
+      curl -s -w '\nHTTP %{http_code}\n' -X POST http://127.0.0.1:8022/tickets/import \
+           -F 'file=@/tmp/oversized.csv;type=text/csv'
+      rm /tmp/oversized.csv
+      ```
+
+      → `413`, `{"detail": "File exceeds the 10 MB upload limit"}`
 
 ### Auto-classify flow + audit log
 

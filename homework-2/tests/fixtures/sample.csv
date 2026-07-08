@@ -1,0 +1,3 @@
+customer_id,customer_email,customer_name,subject,description,category,priority,status,tags,source,browser,device_type
+CUST-1,anna@example.com,Anna,Login broken,Cannot sign in since the last update happened,account_access,high,new,login;urgent-fix,web_form,Firefox 127,desktop
+CUST-2,ben@example.com,Ben,Billing double charge,I was charged twice for my subscription this month,billing_question,medium,new,,email,,

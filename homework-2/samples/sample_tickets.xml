@@ -1,0 +1,554 @@
+<?xml version='1.0' encoding='utf-8'?>
+<tickets>
+  <ticket>
+    <customer_id>CUST-1070</customer_id>
+    <customer_email>nina.shevchenko70@example.com</customer_email>
+    <customer_name>Nina Shevchenko</customer_name>
+    <subject>Refund still not received</subject>
+    <description>I cancelled two weeks ago and the promised refund has not reached my credit card.</description>
+    <category>billing_question</category>
+    <priority>medium</priority>
+    <status>closed</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>refund</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Edge 125</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1071</customer_id>
+    <customer_email>nina.melnyk71@example.com</customer_email>
+    <customer_name>Nina Melnyk</customer_name>
+    <subject>Update payment method</subject>
+    <description>I need to change the credit card used for billing before the next payment date.</description>
+    <category>billing_question</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <tags>
+      <tag>refund</tag>
+      <tag>payment</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1072</customer_id>
+    <customer_email>oleg.ponomarenko72@example.com</customer_email>
+    <customer_name>Oleg Ponomarenko</customer_name>
+    <subject>Please add dark mode</subject>
+    <description>It would be nice to add support for a dark theme, this is just a suggestion.</description>
+    <category>feature_request</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <assigned_to>agent.kova</assigned_to>
+    <metadata>
+      <source>chat</source>
+      <browser>Edge 125</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1073</customer_id>
+    <customer_email>roman.boyko73@example.com</customer_email>
+    <customer_name>Roman Boyko</customer_name>
+    <subject>Feature request: CSV export</subject>
+    <description>An enhancement idea: please add an export of the ticket list to CSV files.</description>
+    <category>feature_request</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>ui</tag>
+      <tag>idea</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Safari 18</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1074</customer_id>
+    <customer_email>mark.ponomarenko74@example.com</customer_email>
+    <customer_name>Mark Ponomarenko</customer_name>
+    <subject>Improvement for search</subject>
+    <description>I suggest an improvement so search understands partial matches and typos better.</description>
+    <category>feature_request</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.olha</assigned_to>
+    <tags>
+      <tag>export</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Safari 18</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1075</customer_id>
+    <customer_email>sofia.kravets75@example.com</customer_email>
+    <customer_name>Sofia Kravets</customer_name>
+    <subject>Crash when uploading avatar</subject>
+    <description>Steps to reproduce:
+1. Open profile
+2. Upload a PNG avatar
+Expected behavior: image saves. Actual behavior: the app crashes with an error.</description>
+    <category>bug_report</category>
+    <priority>high</priority>
+    <status>resolved</status>
+    <metadata>
+      <source>phone</source>
+      <browser>Firefox 127</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1076</customer_id>
+    <customer_email>kate.savchenko76@example.com</customer_email>
+    <customer_name>Kate Savchenko</customer_name>
+    <subject>Wrong totals in report</subject>
+    <description>Steps to reproduce:
+1. Create two invoices
+2. Open the monthly report
+Expected result: totals match. Actual result: the regression shows doubled numbers.</description>
+    <category>bug_report</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>crash</tag>
+      <tag>bug</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Safari 18</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1077</customer_id>
+    <customer_email>olena.ponomarenko77@example.com</customer_email>
+    <customer_name>Olena Ponomarenko</customer_name>
+    <subject>Broken link in welcome email</subject>
+    <description>The getting started link returns a 404 page, reproduction is stable on every send.</description>
+    <category>bug_report</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.smith</assigned_to>
+    <metadata>
+      <source>api</source>
+      <browser>Chrome 126</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1078</customer_id>
+    <customer_email>oleg.kovalenko78@example.com</customer_email>
+    <customer_name>Oleg Kovalenko</customer_name>
+    <subject>General question about limits</subject>
+    <description>Where can I read about plan limits and how many seats my team can use in total?</description>
+    <category>other</category>
+    <priority>medium</priority>
+    <status>in_progress</status>
+    <assigned_to>agent.kova</assigned_to>
+    <metadata>
+      <source>phone</source>
+      <browser>Safari 18</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1079</customer_id>
+    <customer_email>dmytro.shevchenko79@example.com</customer_email>
+    <customer_name>Dmytro Shevchenko</customer_name>
+    <subject>Thanks for the great support</subject>
+    <description>Just wanted to leave positive feedback about the recent onboarding experience.</description>
+    <category>other</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.olha</assigned_to>
+    <tags>
+      <tag>feedback</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Chrome 126</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1080</customer_id>
+    <customer_email>marta.bondar80@example.com</customer_email>
+    <customer_name>Marta Bondar</customer_name>
+    <subject>Can't log into my account</subject>
+    <description>After the last password reset my login attempts fail with an authentication error.</description>
+    <category>account_access</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <assigned_to>agent.smith</assigned_to>
+    <tags>
+      <tag>2fa</tag>
+      <tag>login</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Chrome 126</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1081</customer_id>
+    <customer_email>lesia.lysenko81@example.com</customer_email>
+    <customer_name>Lesia Lysenko</customer_name>
+    <subject>2FA code never arrives</subject>
+    <description>The two-factor verification code is not delivered to my phone, I am locked out.</description>
+    <category>account_access</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <assigned_to>agent.olha</assigned_to>
+    <tags>
+      <tag>2fa</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Edge 125</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1082</customer_id>
+    <customer_email>ann.tkachuk82@example.com</customer_email>
+    <customer_name>Ann Tkachuk</customer_name>
+    <subject>Account locked after vacation</subject>
+    <description>My account locked message appears every time I try to sign in with valid credentials.</description>
+    <category>account_access</category>
+    <priority>high</priority>
+    <status>waiting_customer</status>
+    <assigned_to>agent.olha</assigned_to>
+    <tags>
+      <tag>password</tag>
+      <tag>access</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Firefox 127</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1083</customer_id>
+    <customer_email>dmytro.shevchenko83@example.com</customer_email>
+    <customer_name>Dmytro Shevchenko</customer_name>
+    <subject>Session expires too fast</subject>
+    <description>The session expired notice appears after two minutes and forces me to log in again.</description>
+    <category>account_access</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>access</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Edge 125</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1084</customer_id>
+    <customer_email>taras.lysenko84@example.com</customer_email>
+    <customer_name>Taras Lysenko</customer_name>
+    <subject>Dashboard shows an error</subject>
+    <description>The analytics dashboard shows a timeout error and sometimes crashes during load.</description>
+    <category>technical_issue</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.smith</assigned_to>
+    <metadata>
+      <source>email</source>
+      <browser>Safari 18</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1085</customer_id>
+    <customer_email>marta.melnyk85@example.com</customer_email>
+    <customer_name>Marta Melnyk</customer_name>
+    <subject>Export to PDF not working</subject>
+    <description>Exporting reports fails with an exception, the button simply does not work anymore.</description>
+    <category>technical_issue</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <assigned_to>agent.kova</assigned_to>
+    <metadata>
+      <source>web_form</source>
+      <browser>Chrome 126</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1086</customer_id>
+    <customer_email>iryna.kovalenko86@example.com</customer_email>
+    <customer_name>Iryna Kovalenko</customer_name>
+    <subject>Page freezes on save</subject>
+    <description>The editor freezes when I press save and the browser tab becomes unresponsive.</description>
+    <category>technical_issue</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.olha</assigned_to>
+    <tags>
+      <tag>performance</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Safari 18</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1087</customer_id>
+    <customer_email>mark.kravets87@example.com</customer_email>
+    <customer_name>Mark Kravets</customer_name>
+    <subject>Sync is very slow</subject>
+    <description>Synchronization between devices is slow and often ends with a timeout failure.</description>
+    <category>technical_issue</category>
+    <priority>low</priority>
+    <status>closed</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>performance</tag>
+      <tag>error</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Firefox 127</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1088</customer_id>
+    <customer_email>ivan.bondar88@example.com</customer_email>
+    <customer_name>Ivan Bondar</customer_name>
+    <subject>Charged twice this month</subject>
+    <description>My invoice shows a double charge for the same subscription period, I need a refund.</description>
+    <category>billing_question</category>
+    <priority>low</priority>
+    <status>closed</status>
+    <tags>
+      <tag>payment</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Firefox 127</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1089</customer_id>
+    <customer_email>petro.lysenko89@example.com</customer_email>
+    <customer_name>Petro Lysenko</customer_name>
+    <subject>Question about renewal price</subject>
+    <description>The renewal pricing on my latest receipt differs from the plan I originally bought.</description>
+    <category>billing_question</category>
+    <priority>high</priority>
+    <status>new</status>
+    <tags>
+      <tag>payment</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Safari 18</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1090</customer_id>
+    <customer_email>oleg.melnyk90@example.com</customer_email>
+    <customer_name>Oleg Melnyk</customer_name>
+    <subject>Refund still not received</subject>
+    <description>I cancelled two weeks ago and the promised refund has not reached my credit card.</description>
+    <category>billing_question</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>payment</tag>
+      <tag>refund</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Edge 125</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1091</customer_id>
+    <customer_email>ann.boyko91@example.com</customer_email>
+    <customer_name>Ann Boyko</customer_name>
+    <subject>Update payment method</subject>
+    <description>I need to change the credit card used for billing before the next payment date.</description>
+    <category>billing_question</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>billing</tag>
+      <tag>refund</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Edge 125</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1092</customer_id>
+    <customer_email>oleg.lysenko92@example.com</customer_email>
+    <customer_name>Oleg Lysenko</customer_name>
+    <subject>Please add dark mode</subject>
+    <description>It would be nice to add support for a dark theme, this is just a suggestion.</description>
+    <category>feature_request</category>
+    <priority>medium</priority>
+    <status>in_progress</status>
+    <metadata>
+      <source>email</source>
+      <browser>Safari 18</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1093</customer_id>
+    <customer_email>ann.shevchenko93@example.com</customer_email>
+    <customer_name>Ann Shevchenko</customer_name>
+    <subject>Feature request: CSV export</subject>
+    <description>An enhancement idea: please add an export of the ticket list to CSV files.</description>
+    <category>feature_request</category>
+    <priority>medium</priority>
+    <status>in_progress</status>
+    <assigned_to>agent.olha</assigned_to>
+    <tags>
+      <tag>ui</tag>
+      <tag>export</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Safari 18</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1094</customer_id>
+    <customer_email>roman.kovalenko94@example.com</customer_email>
+    <customer_name>Roman Kovalenko</customer_name>
+    <subject>Improvement for search</subject>
+    <description>I suggest an improvement so search understands partial matches and typos better.</description>
+    <category>feature_request</category>
+    <priority>medium</priority>
+    <status>resolved</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>enhancement</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Edge 125</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1095</customer_id>
+    <customer_email>mark.lysenko95@example.com</customer_email>
+    <customer_name>Mark Lysenko</customer_name>
+    <subject>Crash when uploading avatar</subject>
+    <description>Steps to reproduce:
+1. Open profile
+2. Upload a PNG avatar
+Expected behavior: image saves. Actual behavior: the app crashes with an error.</description>
+    <category>bug_report</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.smith</assigned_to>
+    <tags>
+      <tag>regression</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1096</customer_id>
+    <customer_email>petro.melnyk96@example.com</customer_email>
+    <customer_name>Petro Melnyk</customer_name>
+    <subject>Wrong totals in report</subject>
+    <description>Steps to reproduce:
+1. Create two invoices
+2. Open the monthly report
+Expected result: totals match. Actual result: the regression shows doubled numbers.</description>
+    <category>bug_report</category>
+    <priority>medium</priority>
+    <status>resolved</status>
+    <assigned_to>agent.kova</assigned_to>
+    <tags>
+      <tag>crash</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Safari 18</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1097</customer_id>
+    <customer_email>oleg.bondar97@example.com</customer_email>
+    <customer_name>Oleg Bondar</customer_name>
+    <subject>Broken link in welcome email</subject>
+    <description>The getting started link returns a 404 page, reproduction is stable on every send.</description>
+    <category>bug_report</category>
+    <priority>medium</priority>
+    <status>new</status>
+    <assigned_to>agent.smith</assigned_to>
+    <tags>
+      <tag>repro</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Safari 18</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1098</customer_id>
+    <customer_email>roman.savchenko98@example.com</customer_email>
+    <customer_name>Roman Savchenko</customer_name>
+    <subject>General question about limits</subject>
+    <description>Where can I read about plan limits and how many seats my team can use in total?</description>
+    <category>other</category>
+    <priority>low</priority>
+    <status>in_progress</status>
+    <tags>
+      <tag>question</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Chrome 126</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1099</customer_id>
+    <customer_email>lesia.bondar99@example.com</customer_email>
+    <customer_name>Lesia Bondar</customer_name>
+    <subject>Thanks for the great support</subject>
+    <description>Just wanted to leave positive feedback about the recent onboarding experience.</description>
+    <category>other</category>
+    <priority>urgent</priority>
+    <status>closed</status>
+    <tags>
+      <tag>question</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+</tickets>

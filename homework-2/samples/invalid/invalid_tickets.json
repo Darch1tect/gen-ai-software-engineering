@@ -1,0 +1,59 @@
+[
+  {
+    "customer_id": "CUST-1210",
+    "customer_email": "roman.lysenko210@example.com",
+    "customer_name": "Roman Lysenko",
+    "subject": "Refund still not received",
+    "description": "I cancelled two weeks ago and the promised refund has not reached my credit card.",
+    "category": "billing_question",
+    "priority": "medium",
+    "status": "resolved",
+    "tags": [
+      "refund",
+      "invoice"
+    ],
+    "metadata": {
+      "source": "api",
+      "browser": "Chrome 126"
+    },
+    "assigned_to": "agent.smith"
+  },
+  {
+    "customer_id": "CUST-1211",
+    "customer_email": "broken-at-example.com",
+    "customer_name": "Petro Lysenko",
+    "subject": "Update payment method",
+    "description": "I need to change the credit card used for billing before the next payment date.",
+    "category": "billing_question",
+    "priority": "medium",
+    "status": "new",
+    "tags": [
+      "refund"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Safari 18"
+    }
+  },
+  {
+    "customer_id": "CUST-1212",
+    "customer_email": "oleg.kovalenko212@example.com",
+    "customer_name": "Oleg Kovalenko",
+    "subject": "Please add dark mode",
+    "description": "It would be nice to add support for a dark theme, this is just a suggestion.",
+    "category": "feature_request",
+    "priority": "whenever",
+    "status": "sleeping",
+    "tags": [],
+    "metadata": {
+      "source": "chat",
+      "device_type": "tablet"
+    },
+    "assigned_to": "agent.kova"
+  },
+  {
+    "customer_id": "CUST-999",
+    "subject": "Missing almost everything"
+  },
+  "just a string, not a ticket object"
+]

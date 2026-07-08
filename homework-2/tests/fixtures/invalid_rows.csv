@@ -1,0 +1,3 @@
+customer_id,customer_email,customer_name,subject,description,category,priority,status,tags,source,browser,device_type
+CUST-10,valid@example.com,Vera,Printer offline,The office printer driver reports a spooler error constantly,technical_issue,medium,new,,web_form,,
+CUST-11,not-an-email,Petro,Broken row,This row has an invalid email and must be rejected,technical_issue,low,new,,email,,

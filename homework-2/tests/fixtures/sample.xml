@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tickets>
+  <ticket>
+    <customer_id>CUST-30</customer_id>
+    <customer_email>ivan@example.com</customer_email>
+    <customer_name>Ivan</customer_name>
+    <subject>Refund not received</subject>
+    <description>I cancelled my plan two weeks ago and still have not received the refund.</description>
+    <category>billing_question</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <tags>
+      <tag>refund</tag>
+      <tag>billing</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+    </metadata>
+  </ticket>
+</tickets>

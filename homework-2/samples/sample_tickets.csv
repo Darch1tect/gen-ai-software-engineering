@@ -1,0 +1,63 @@
+customer_id,customer_email,customer_name,subject,description,category,priority,status,assigned_to,tags,source,browser,device_type
+CUST-1000,ann.shevchenko0@example.com,Ann Shevchenko,Can't log into my account,After the last password reset my login attempts fail with an authentication error.,account_access,low,resolved,agent.olha,2fa;login,email,Firefox 127,desktop
+CUST-1001,mark.shevchenko1@example.com,Mark Shevchenko,2FA code never arrives,"The two-factor verification code is not delivered to my phone, I am locked out.",account_access,medium,waiting_customer,agent.olha,,web_form,Firefox 127,mobile
+CUST-1002,sofia.ponomarenko2@example.com,Sofia Ponomarenko,Account locked after vacation,My account locked message appears every time I try to sign in with valid credentials.,account_access,urgent,closed,agent.smith,password,chat,,tablet
+CUST-1003,mark.kravets3@example.com,Mark Kravets,Session expires too fast,The session expired notice appears after two minutes and forces me to log in again.,account_access,urgent,in_progress,agent.olha,password,email,Safari 18,desktop
+CUST-1004,yurii.kravets4@example.com,Yurii Kravets,Dashboard shows an error,The analytics dashboard shows a timeout error and sometimes crashes during load.,technical_issue,medium,new,agent.kova,performance;error,chat,,desktop
+CUST-1005,yurii.savchenko5@example.com,Yurii Savchenko,Export to PDF not working,"Exporting reports fails with an exception, the button simply does not work anymore.",technical_issue,medium,new,agent.smith,,web_form,Chrome 126,mobile
+CUST-1006,ann.boyko6@example.com,Ann Boyko,Page freezes on save,The editor freezes when I press save and the browser tab becomes unresponsive.,technical_issue,medium,new,agent.kova,sync,api,Firefox 127,tablet
+CUST-1007,petro.savchenko7@example.com,Petro Savchenko,Sync is very slow,Synchronization between devices is slow and often ends with a timeout failure.,technical_issue,medium,new,agent.smith,crash;performance,email,Firefox 127,
+CUST-1008,nina.shevchenko8@example.com,Nina Shevchenko,Charged twice this month,"My invoice shows a double charge for the same subscription period, I need a refund.",billing_question,medium,new,agent.smith,,web_form,Safari 18,
+CUST-1009,nina.tkachuk9@example.com,Nina Tkachuk,Question about renewal price,The renewal pricing on my latest receipt differs from the plan I originally bought.,billing_question,high,new,agent.kova,payment;invoice,chat,Firefox 127,tablet
+CUST-1010,mark.savchenko10@example.com,Mark Savchenko,Refund still not received,I cancelled two weeks ago and the promised refund has not reached my credit card.,billing_question,urgent,closed,agent.olha,refund,email,Firefox 127,
+CUST-1011,ann.bondar11@example.com,Ann Bondar,Update payment method,I need to change the credit card used for billing before the next payment date.,billing_question,medium,in_progress,,invoice;refund,chat,,desktop
+CUST-1012,kate.ponomarenko12@example.com,Kate Ponomarenko,Please add dark mode,"It would be nice to add support for a dark theme, this is just a suggestion.",feature_request,low,new,agent.olha,,web_form,,tablet
+CUST-1013,taras.boyko13@example.com,Taras Boyko,Feature request: CSV export,An enhancement idea: please add an export of the ticket list to CSV files.,feature_request,medium,closed,agent.smith,,chat,Chrome 126,tablet
+CUST-1014,ann.melnyk14@example.com,Ann Melnyk,Improvement for search,I suggest an improvement so search understands partial matches and typos better.,feature_request,medium,new,,ui;enhancement,api,Firefox 127,desktop
+CUST-1015,olena.kovalenko15@example.com,Olena Kovalenko,Crash when uploading avatar,"Steps to reproduce:
+1. Open profile
+2. Upload a PNG avatar
+Expected behavior: image saves. Actual behavior: the app crashes with an error.",bug_report,medium,new,agent.olha,crash,email,Chrome 126,mobile
+CUST-1016,oleg.kovalenko16@example.com,Oleg Kovalenko,Wrong totals in report,"Steps to reproduce:
+1. Create two invoices
+2. Open the monthly report
+Expected result: totals match. Actual result: the regression shows doubled numbers.",bug_report,medium,waiting_customer,,regression;bug,chat,,mobile
+CUST-1017,sofia.ponomarenko17@example.com,Sofia Ponomarenko,Broken link in welcome email,"The getting started link returns a 404 page, reproduction is stable on every send.",bug_report,medium,waiting_customer,,regression;crash,api,Edge 125,tablet
+CUST-1018,ann.tkachuk18@example.com,Ann Tkachuk,General question about limits,Where can I read about plan limits and how many seats my team can use in total?,other,medium,waiting_customer,agent.smith,,web_form,Safari 18,desktop
+CUST-1019,roman.shevchenko19@example.com,Roman Shevchenko,Thanks for the great support,Just wanted to leave positive feedback about the recent onboarding experience.,other,urgent,closed,agent.kova,,web_form,Firefox 127,desktop
+CUST-1020,petro.ponomarenko20@example.com,Petro Ponomarenko,Can't log into my account,After the last password reset my login attempts fail with an authentication error.,account_access,medium,new,,,api,Edge 125,mobile
+CUST-1021,roman.lysenko21@example.com,Roman Lysenko,2FA code never arrives,"The two-factor verification code is not delivered to my phone, I am locked out.",account_access,medium,in_progress,,password,web_form,Chrome 126,
+CUST-1022,iryna.shevchenko22@example.com,Iryna Shevchenko,Account locked after vacation,My account locked message appears every time I try to sign in with valid credentials.,account_access,high,new,agent.smith,login;access,chat,Safari 18,desktop
+CUST-1023,iryna.bondar23@example.com,Iryna Bondar,Session expires too fast,The session expired notice appears after two minutes and forces me to log in again.,account_access,urgent,in_progress,agent.olha,password,api,Edge 125,mobile
+CUST-1024,ivan.ponomarenko24@example.com,Ivan Ponomarenko,Dashboard shows an error,The analytics dashboard shows a timeout error and sometimes crashes during load.,technical_issue,medium,in_progress,,,web_form,Firefox 127,mobile
+CUST-1025,sofia.boyko25@example.com,Sofia Boyko,Export to PDF not working,"Exporting reports fails with an exception, the button simply does not work anymore.",technical_issue,medium,new,,,email,Edge 125,desktop
+CUST-1026,taras.boyko26@example.com,Taras Boyko,Page freezes on save,The editor freezes when I press save and the browser tab becomes unresponsive.,technical_issue,urgent,waiting_customer,agent.olha,sync;error,email,Safari 18,mobile
+CUST-1027,nina.shevchenko27@example.com,Nina Shevchenko,Sync is very slow,Synchronization between devices is slow and often ends with a timeout failure.,technical_issue,urgent,waiting_customer,agent.olha,,phone,Edge 125,mobile
+CUST-1028,dmytro.kovalenko28@example.com,Dmytro Kovalenko,Charged twice this month,"My invoice shows a double charge for the same subscription period, I need a refund.",billing_question,medium,new,agent.olha,billing;refund,email,Edge 125,desktop
+CUST-1029,petro.boyko29@example.com,Petro Boyko,Question about renewal price,The renewal pricing on my latest receipt differs from the plan I originally bought.,billing_question,medium,in_progress,agent.smith,refund;invoice,email,Safari 18,mobile
+CUST-1030,taras.lysenko30@example.com,Taras Lysenko,Refund still not received,I cancelled two weeks ago and the promised refund has not reached my credit card.,billing_question,urgent,waiting_customer,agent.smith,billing,web_form,Edge 125,desktop
+CUST-1031,kate.bondar31@example.com,Kate Bondar,Update payment method,I need to change the credit card used for billing before the next payment date.,billing_question,high,in_progress,agent.kova,billing,email,Safari 18,tablet
+CUST-1032,olena.ponomarenko32@example.com,Olena Ponomarenko,Please add dark mode,"It would be nice to add support for a dark theme, this is just a suggestion.",feature_request,urgent,resolved,agent.smith,enhancement,email,Safari 18,desktop
+CUST-1033,kate.melnyk33@example.com,Kate Melnyk,Feature request: CSV export,An enhancement idea: please add an export of the ticket list to CSV files.,feature_request,medium,in_progress,agent.kova,ui;export,api,Firefox 127,tablet
+CUST-1034,ivan.kovalenko34@example.com,Ivan Kovalenko,Improvement for search,I suggest an improvement so search understands partial matches and typos better.,feature_request,high,resolved,agent.kova,idea;ui,web_form,Chrome 126,tablet
+CUST-1035,dmytro.lysenko35@example.com,Dmytro Lysenko,Crash when uploading avatar,"Steps to reproduce:
+1. Open profile
+2. Upload a PNG avatar
+Expected behavior: image saves. Actual behavior: the app crashes with an error.",bug_report,low,new,agent.olha,repro;crash,web_form,Chrome 126,desktop
+CUST-1036,yurii.savchenko36@example.com,Yurii Savchenko,Wrong totals in report,"Steps to reproduce:
+1. Create two invoices
+2. Open the monthly report
+Expected result: totals match. Actual result: the regression shows doubled numbers.",bug_report,medium,closed,agent.olha,regression;repro,email,Chrome 126,tablet
+CUST-1037,yurii.tkachuk37@example.com,Yurii Tkachuk,Broken link in welcome email,"The getting started link returns a 404 page, reproduction is stable on every send.",bug_report,medium,resolved,agent.smith,regression;crash,web_form,Safari 18,
+CUST-1038,roman.bondar38@example.com,Roman Bondar,General question about limits,Where can I read about plan limits and how many seats my team can use in total?,other,low,new,,,chat,Chrome 126,mobile
+CUST-1039,roman.melnyk39@example.com,Roman Melnyk,Thanks for the great support,Just wanted to leave positive feedback about the recent onboarding experience.,other,medium,new,agent.smith,,web_form,Edge 125,desktop
+CUST-1040,iryna.kravets40@example.com,Iryna Kravets,Can't log into my account,After the last password reset my login attempts fail with an authentication error.,account_access,medium,new,agent.kova,password,email,Chrome 126,mobile
+CUST-1041,petro.melnyk41@example.com,Petro Melnyk,2FA code never arrives,"The two-factor verification code is not delivered to my phone, I am locked out.",account_access,urgent,new,agent.smith,access,phone,Safari 18,desktop
+CUST-1042,kate.shevchenko42@example.com,Kate Shevchenko,Account locked after vacation,My account locked message appears every time I try to sign in with valid credentials.,account_access,low,closed,agent.kova,,phone,Edge 125,tablet
+CUST-1043,mark.savchenko43@example.com,Mark Savchenko,Session expires too fast,The session expired notice appears after two minutes and forces me to log in again.,account_access,urgent,resolved,,login;password,phone,Firefox 127,tablet
+CUST-1044,olena.ponomarenko44@example.com,Olena Ponomarenko,Dashboard shows an error,The analytics dashboard shows a timeout error and sometimes crashes during load.,technical_issue,medium,new,agent.olha,crash;sync,chat,Chrome 126,tablet
+CUST-1045,taras.ponomarenko45@example.com,Taras Ponomarenko,Export to PDF not working,"Exporting reports fails with an exception, the button simply does not work anymore.",technical_issue,medium,new,agent.smith,sync,api,Edge 125,tablet
+CUST-1046,mark.boyko46@example.com,Mark Boyko,Page freezes on save,The editor freezes when I press save and the browser tab becomes unresponsive.,technical_issue,medium,closed,agent.olha,crash;performance,phone,Safari 18,
+CUST-1047,taras.melnyk47@example.com,Taras Melnyk,Sync is very slow,Synchronization between devices is slow and often ends with a timeout failure.,technical_issue,medium,in_progress,,,chat,,tablet
+CUST-1048,sofia.ponomarenko48@example.com,Sofia Ponomarenko,Charged twice this month,"My invoice shows a double charge for the same subscription period, I need a refund.",billing_question,urgent,closed,agent.smith,invoice,web_form,Safari 18,tablet
+CUST-1049,taras.tkachuk49@example.com,Taras Tkachuk,Question about renewal price,The renewal pricing on my latest receipt differs from the plan I originally bought.,billing_question,high,in_progress,agent.olha,,email,Chrome 126,desktop

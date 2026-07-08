@@ -19,9 +19,9 @@ SQLAlchemy 2, SQLite, pytest (+pytest-cov, 85% gate), uv.
 ## Read first (source of truth — do not invent anything)
 
 1. Current `README.md` — reuse what is still accurate, restructure freely
-2. `app/main.py`, `app/routers/tickets.py` — app wiring and all endpoints
-3. `app/schemas.py`, `app/models.py` — domain model
-4. `app/classifier.py`, `app/parsers.py` — the two core mechanisms
+2. `src/app/main.py`, `src/app/routers/tickets.py` — app wiring and all endpoints
+3. `src/app/schemas.py`, `src/app/models.py` — domain model
+4. `src/app/classifier.py`, `src/app/parsers.py` — the two core mechanisms
 5. `pyproject.toml` — dependencies, test configuration
 6. `tests/` and `samples/` directory listings
 
@@ -45,7 +45,7 @@ Rewrite `README.md` (repo root) with exactly these sections:
    `--no-cov` variant, how to run a single file; current suite: 58 tests,
    ~96% coverage; embed the coverage screenshot
    `docs/screenshots/test_coverage.png`.
-5. **Project structure** — annotated tree of `app/`, `tests/`, `samples/`,
+5. **Project structure** — annotated tree of `src/app/`, `tests/`, `samples/`,
    `scripts/`; one line per entry saying *why it exists*, not just what it is.
 
 ## Style
@@ -61,6 +61,6 @@ Rewrite `README.md` (repo root) with exactly these sections:
 
 - [ ] `uv sync && uv run pytest -q` — confirm the test count and coverage
       number you cite are what actually prints
-- [ ] Endpoint list matches `app/routers/tickets.py` exactly (8 routes + `/health`)
+- [ ] Endpoint list matches `src/app/routers/tickets.py` exactly (8 routes + `/health`)
 - [ ] Every command in the doc has been executed successfully in this repo
 - [ ] Mermaid renders (mentally trace the syntax; no orphan nodes)

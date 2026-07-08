@@ -57,13 +57,13 @@ append-only `classification_log` table.
 
 | Module | Responsibility | Deliberately does NOT |
 |---|---|---|
-| `app/main.py` | App assembly: logging config, lifespan (`create_all`), router registration, `/health` | Contain any business logic |
-| `app/database.py` | Engine + session factory; `DATABASE_URL` env override; `get_db` dependency | Manage migrations or pooling policy beyond defaults |
-| `app/models.py` | Two tables: `Ticket` (UUID pk, JSON columns for tags/metadata, classification fields) and `ClassificationLog` (append-only, intentionally no FK) | Enforce enum values — that is the schema layer's job; the DB stores plain strings |
-| `app/schemas.py` | All validation rules: length bounds, `EmailStr`, six enums, `extra="forbid"`; separate Create/Update/Out models | Leak ORM concerns; `TicketOut` maps the `meta` attribute back to the `metadata` wire name |
-| `app/parsers.py` | Bytes → list of raw dicts per format; format detection (extension, then Content-Type); file-level failures as `FileParseError` | Validate records — a parser that rejects rows would re-implement the schemas and break per-record error reporting |
-| `app/classifier.py` | Deterministic keyword engine: weighted category scores (subject ×2), ordered priority rules, confidence formula, reasoning string | Call any external service; hold any state; touch the DB |
-| `app/routers/tickets.py` | Orchestration: CRUD, the import loop (parse → validate each → persist valid), classification application, manual-override detection, audit rows | Parse files or score keywords itself |
+| `src/app/main.py` | App assembly: logging config, lifespan (`create_all`), router registration, `/health` | Contain any business logic |
+| `src/app/database.py` | Engine + session factory; `DATABASE_URL` env override; `get_db` dependency | Manage migrations or pooling policy beyond defaults |
+| `src/app/models.py` | Two tables: `Ticket` (UUID pk, JSON columns for tags/metadata, classification fields) and `ClassificationLog` (append-only, intentionally no FK) | Enforce enum values — that is the schema layer's job; the DB stores plain strings |
+| `src/app/schemas.py` | All validation rules: length bounds, `EmailStr`, six enums, `extra="forbid"`; separate Create/Update/Out models | Leak ORM concerns; `TicketOut` maps the `meta` attribute back to the `metadata` wire name |
+| `src/app/parsers.py` | Bytes → list of raw dicts per format; format detection (extension, then Content-Type); file-level failures as `FileParseError` | Validate records — a parser that rejects rows would re-implement the schemas and break per-record error reporting |
+| `src/app/classifier.py` | Deterministic keyword engine: weighted category scores (subject ×2), ordered priority rules, confidence formula, reasoning string | Call any external service; hold any state; touch the DB |
+| `src/app/routers/tickets.py` | Orchestration: CRUD, the import loop (parse → validate each → persist valid), classification application, manual-override detection, audit rows | Parse files or score keywords itself |
 
 Key invariants worth protecting in review:
 

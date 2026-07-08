@@ -50,7 +50,7 @@ pytest · uv
 flowchart LR
     Client([Client])
 
-    subgraph API["FastAPI · app/"]
+    subgraph API["FastAPI · src/app/"]
         Router["Router<br/>routers/tickets.py"]
         Schemas["Validation<br/>schemas.py (Pydantic)"]
         Parsers["Parsers<br/>parsers.py<br/>CSV / JSON / XML"]
@@ -139,7 +139,7 @@ Current state: **58 tests, ~96% coverage** (gate: 85%).
 ## Project structure
 
 ```
-app/
+src/app/
   main.py             # FastAPI app assembly, logging config, lifespan (creates tables)
   database.py         # engine/session factory; DATABASE_URL overridable via env
   models.py           # SQLAlchemy tables: Ticket + append-only ClassificationLog

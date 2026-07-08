@@ -83,13 +83,13 @@ run:
 ```
 Name                     Stmts   Miss  Cover   Missing
 ------------------------------------------------------
-app/classifier.py           65      0   100%
-app/database.py             13      4    69%   20-24
-app/main.py                 15      0   100%
-app/models.py               38      0   100%
-app/parsers.py               79      5    94%   28, 30-31, 118, 124
-app/routers/tickets.py      147      8    95%   86, 106, 116, 139, 171, 177, 179, 230
-app/schemas.py               76      0   100%
+src/app/classifier.py           65      0   100%
+src/app/database.py             13      4    69%   20-24
+src/app/main.py                 15      0   100%
+src/app/models.py               38      0   100%
+src/app/parsers.py               79      5    94%   28, 30-31, 118, 124
+src/app/routers/tickets.py      147      8    95%   86, 106, 116, 139, 171, 177, 179, 230
+src/app/schemas.py               76      0   100%
 ------------------------------------------------------
 TOTAL                       433     17    96%
 ```
@@ -98,7 +98,7 @@ TOTAL                       433     17    96%
   executed, and the resulting percentage.
 - **Missing** — exact line numbers not hit by any test. Use this to decide
   whether a gap is worth closing (a real branch nobody tests) or is
-  acceptable (e.g. `app/database.py`'s `get_db()` is the *production*
+  acceptable (e.g. `src/app/database.py`'s `get_db()` is the *production*
   dependency; tests override it with an in-memory session, so it is
   legitimately never exercised).
 - Current baseline is **~96%** total, comfortably above the 85% gate. The
@@ -211,7 +211,7 @@ record is parsed):
 ### Regenerating samples
 
 ```bash
-PYTHONPATH=. uv run python scripts/generate_samples.py
+uv run python scripts/generate_samples.py
 ```
 
 The script writes the files above, then re-parses and re-validates every

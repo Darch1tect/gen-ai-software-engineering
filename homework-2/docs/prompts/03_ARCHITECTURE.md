@@ -12,7 +12,7 @@ whole value of this document — do not sell, assess.
 
 ## Read first
 
-Entire `app/` package (it is small — read every file, don't skim),
+Entire `src/app/` package (it is small — read every file, don't skim),
 `pyproject.toml`, `tests/test_performance.py`, and `git log --oneline`
 for how the system evolved.
 

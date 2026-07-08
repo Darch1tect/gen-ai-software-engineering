@@ -19,8 +19,8 @@ authentication (development service).
 1. **The live OpenAPI schema** — run the server and fetch it; this is the
    contract: `uv run uvicorn app.main:app --port 8000 &` then
    `curl http://localhost:8000/openapi.json`
-2. `app/routers/tickets.py` — status codes and error branches
-3. `app/schemas.py` — every field, constraint, enum, default
+2. `src/app/routers/tickets.py` — status codes and error branches
+3. `src/app/schemas.py` — every field, constraint, enum, default
 4. `samples/` — realistic payloads to borrow for examples
 
 Do not document anything not present in the code. Do not omit any route.
@@ -59,6 +59,6 @@ Write `docs/API_REFERENCE.md` with:
 
 - [ ] Every documented route exists in `openapi.json`; none missing
 - [ ] Run each cURL example against the live server; paste real output
-- [ ] Enum values match `app/schemas.py` letter-for-letter
+- [ ] Enum values match `src/app/schemas.py` letter-for-letter
 - [ ] The three error-shape examples were actually provoked, not invented
 - [ ] Stop the server and delete `tickets.db` when done

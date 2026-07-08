@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from pydantic import ValidationError
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -24,6 +24,16 @@ def _to_orm_kwargs(data: schemas.TicketCreate) -> dict:
     kwargs = data.model_dump(mode="json")
     kwargs["meta"] = kwargs.pop("metadata")
     return kwargs
+
+
+def _sync_resolved_at(ticket: models.Ticket) -> None:
+    """Single owner of the resolved_at lifecycle rule, on every write path:
+    set when the ticket is resolved/closed, cleared when it is reopened."""
+    if ticket.status in (schemas.Status.resolved, schemas.Status.closed):
+        if ticket.resolved_at is None:
+            ticket.resolved_at = utcnow()
+    else:
+        ticket.resolved_at = None
 
 
 def _auto_classify(ticket: models.Ticket, db: Session) -> schemas.ClassificationResult:
@@ -82,8 +92,7 @@ def create_ticket(
     db: Session = Depends(get_db),
 ):
     ticket = models.Ticket(**_to_orm_kwargs(payload))
-    if ticket.status in (schemas.Status.resolved, schemas.Status.closed):
-        ticket.resolved_at = utcnow()
+    _sync_resolved_at(ticket)
     db.add(ticket)
     if auto_classify:
         db.flush()  # assign the id used in the audit log row
@@ -92,8 +101,11 @@ def create_ticket(
     return ticket
 
 
+# deliberately `def`, not `async def`: parsing, per-record validation and the
+# sync SQLAlchemy session below are blocking work, and FastAPI runs plain-def
+# endpoints in its threadpool so the event loop stays responsive during imports
 @router.post("/import", response_model=schemas.ImportSummary)
-async def import_tickets(
+def import_tickets(
     file: UploadFile,
     auto_classify: bool = Query(
         default=False,
@@ -111,7 +123,7 @@ async def import_tickets(
             ),
         )
 
-    data = await file.read()
+    data = file.file.read()
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="File exceeds the 10 MB upload limit")
     if not data.strip():
@@ -135,8 +147,7 @@ async def import_tickets(
             errors.append(schemas.ImportError_(record=index, errors=messages))
             continue
         ticket = models.Ticket(**_to_orm_kwargs(payload))
-        if ticket.status in (schemas.Status.resolved, schemas.Status.closed):
-            ticket.resolved_at = utcnow()
+        _sync_resolved_at(ticket)
         db.add(ticket)
         db.flush()
         if auto_classify:
@@ -182,11 +193,16 @@ def list_tickets(
         query = query.where(
             or_(models.Ticket.subject.ilike(pattern), models.Ticket.description.ilike(pattern))
         )
-    query = query.order_by(models.Ticket.created_at.desc()).limit(limit).offset(offset)
-    tickets = db.scalars(query).all()
     if tag is not None:
-        tickets = [t for t in tickets if tag in (t.tags or [])]
-    return tickets
+        # SQL-level tag predicate (SQLite json_each) so it applies BEFORE
+        # pagination; filtering the page in Python silently dropped matches.
+        # Revisit for a dialect-neutral form if the DB moves off SQLite.
+        tags_each = func.json_each(models.Ticket.tags).table_valued("value")
+        query = query.where(
+            select(tags_each.c.value).where(tags_each.c.value == tag).exists()
+        )
+    query = query.order_by(models.Ticket.created_at.desc()).limit(limit).offset(offset)
+    return db.scalars(query).all()
 
 
 @router.post("/{ticket_id}/auto-classify", response_model=schemas.ClassificationResult)
@@ -231,12 +247,7 @@ def update_ticket(ticket_id: str, payload: schemas.TicketUpdate, db: Session = D
     for field, value in changes.items():
         setattr(ticket, field, value)
 
-    if "status" in changes:
-        if changes["status"] in (schemas.Status.resolved, schemas.Status.closed):
-            if ticket.resolved_at is None:
-                ticket.resolved_at = utcnow()
-        else:
-            ticket.resolved_at = None
+    _sync_resolved_at(ticket)
 
     overridden = [f for f in ("category", "priority") if f in changes]
     if overridden:

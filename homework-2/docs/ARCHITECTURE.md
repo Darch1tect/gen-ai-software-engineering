@@ -190,21 +190,24 @@ expected, not a bug) and no automatic cleanup; the table grows forever.
 never mutate.
 
 **Synchronous SQLAlchemy inside async FastAPI.**
-Endpoints are `def` (except the upload reader), so FastAPI runs them in its
-threadpool; SQLite calls block a worker thread, not the event loop. This is
-the simplest correct configuration for SQLite and removes an entire class
-of async-session bugs. It does become a ceiling with a network database and
-high concurrency (threadpool exhaustion). *Revisit when*: moving to
-Postgres under real load — either async engine or a bigger threadpool,
-measured first.
+All endpoints — including bulk import — are plain `def`, so FastAPI runs
+them in its threadpool; SQLite calls and import parsing block a worker
+thread, not the event loop. (Import was originally `async def` for the
+upload read and did its CPU/DB work on the event loop; a code review
+flagged it and it is now `def` end-to-end.) This is the simplest correct
+configuration for SQLite and removes an entire class of async-session
+bugs. It does become a ceiling with a network database and high
+concurrency (threadpool exhaustion). *Revisit when*: moving to Postgres
+under real load — either async engine or a bigger threadpool, measured
+first.
 
-**Known wart: `tag` filtering happens in Python after SQL pagination**
-(`routers/tickets.py`, `list_tickets`). A page of 50 can return fewer than
-50 matching tickets even when more exist, because the tag predicate runs on
-the already-paginated rows. Acceptable while tags are a JSON column in
-SQLite; fix properly with a JSON containment query or a tag join table when
-moving to Postgres. This is documented here precisely so it is not
-rediscovered as a bug.
+**`tag` filtering is a SQL-level predicate applied before pagination**
+(`routers/tickets.py`, `list_tickets`), implemented with SQLite's
+`json_each` over the JSON tags column. An earlier version filtered the
+already-paginated page in Python, which could silently drop matching
+tickets; a pagination regression test now guards this. The predicate is
+SQLite-specific — when moving to Postgres, replace it with a JSON
+containment query or a proper tag join table.
 
 ## 5. Security considerations
 

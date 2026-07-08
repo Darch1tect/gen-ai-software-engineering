@@ -56,6 +56,17 @@ def test_list_tickets_pagination(client, ticket_payload):
     assert len(client.get("/tickets", params={"limit": 2, "offset": 2}).json()) == 1
     assert client.get("/tickets", params={"limit": 0}).status_code == 422
 
+    # regression: the tag predicate must apply BEFORE pagination — the 3
+    # tickets above (tagged "login") are older than these 3 untagged ones,
+    # so filtering the newest-first page in Python would return nothing
+    for i in range(3):
+        client.post("/tickets", json=dict(
+            ticket_payload, customer_id=f"CUST-N{i}", tags=[]
+        ))
+    tagged_page = client.get("/tickets", params={"tag": "login", "limit": 3}).json()
+    assert len(tagged_page) == 3
+    assert all("login" in t["tags"] for t in tagged_page)
+
 
 def test_list_tickets_rejects_bad_filter_value(client):
     assert client.get("/tickets", params={"status": "bogus"}).status_code == 422

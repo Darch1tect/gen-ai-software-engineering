@@ -98,6 +98,8 @@ Full request/response details: interactive Swagger UI at `/docs`, and
 
 ## Installation and setup
 
+Detailed step-by-step instructions (with troubleshooting): [HOWTORUN.md](HOWTORUN.md).
+
 Prerequisites: [uv](https://docs.astral.sh/uv/) (installs the right Python
 version itself — no system Python required):
 

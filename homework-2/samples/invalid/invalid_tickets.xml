@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='utf-8'?>
+<tickets>
+  <ticket>
+    <customer_id>CUST-1220</customer_id>
+    <customer_email>olena.boyko220@example.com</customer_email>
+    <customer_name>Olena Boyko</customer_name>
+    <subject>Can't log into my account</subject>
+    <description>After the last password reset my login attempts fail with an authentication error.</description>
+    <category>account_access</category>
+    <priority>medium</priority>
+    <status>closed</status>
+    <assigned_to>agent.smith</assigned_to>
+    <tags>
+      <tag>login</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Chrome 126</browser>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1221</customer_id>
+    <customer_email>no-at-sign</customer_email>
+    <customer_name>Yurii Tkachuk</customer_name>
+    <subject>2FA code never arrives</subject>
+    <description>The two-factor verification code is not delivered to my phone, I am locked out.</description>
+    <category>account_access</category>
+    <priority>low</priority>
+    <status>resolved</status>
+    <assigned_to>agent.olha</assigned_to>
+    <tags>
+      <tag>password</tag>
+      <tag>2fa</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Firefox 127</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1222</customer_id>
+    <customer_email>taras.lysenko222@example.com</customer_email>
+    <customer_name>Taras Lysenko</customer_name>
+    <subject>Account locked after vacation</subject>
+    <description>My account locked message appears every time I try to sign in with valid credentials.</description>
+    <category>account_access</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <assigned_to>agent.kova</assigned_to>
+    <metadata>
+      <source>telepathy</source>
+      <device_type>fridge</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1223</customer_id>
+    <customer_email>mark.bondar223@example.com</customer_email>
+    <customer_name>Mark Bondar</customer_name>
+    <subject>Session expires too fast</subject>
+    <description>short</description>
+    <category>account_access</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <assigned_to>agent.kova</assigned_to>
+    <metadata>
+      <source>email</source>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+</tickets>

@@ -16,6 +16,10 @@
         "/Users/Dart_Raziel/Projects/Education/SET/gen-ai-software-engineering/homework-5"
       ],
       "env": {}
+    },
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp/authv2"
     }
   }
 }

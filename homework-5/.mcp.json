@@ -6,6 +6,16 @@
       "headers": {
         "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/Dart_Raziel/Projects/Education/SET/gen-ai-software-engineering/homework-5"
+      ],
+      "env": {}
     }
   }
 }

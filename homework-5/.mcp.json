@@ -1,0 +1,33 @@
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/Dart_Raziel/Projects/Education/SET/gen-ai-software-engineering/homework-5"
+      ],
+      "env": {}
+    },
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp/authv2"
+    },
+    "lorem-ipsum": {
+      "type": "stdio",
+      "command": "/Users/Dart_Raziel/Projects/Education/SET/gen-ai-software-engineering/homework-5/custom-mcp-server/.venv/bin/python",
+      "args": [
+        "/Users/Dart_Raziel/Projects/Education/SET/gen-ai-software-engineering/homework-5/custom-mcp-server/server.py"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -1,0 +1,124 @@
+############################################################
+# 4-Agent Bug-Fix Pipeline — bug id: 001
+############################################################
+
+================================================================
+ STAGE: Bug Researcher   (model: sonnet)
+================================================================
+Investigated all three seeded issues in `src/expense_tracker.py` against `context/bugs/001/bug-context.md` and cross-checked each against the corresponding failing test in `tests/test_expense_tracker.py`. All three are confirmed with high confidence (off-by-one loop in `calculate_total`, inverted discount multiplier in `apply_member_discount`, and string-concatenation SQL injection in `search_expenses`). Findings written to `context/bugs/001/research/codebase-research.md`.
+
+================================================================
+ STAGE: Bug Research Verifier   (model: opus)
+================================================================
+Verification complete. `context/bugs/001/research/verified-research.md` is written.
+
+**Result: PASS — Research Quality EXCELLENT (12/12). 24 claims checked, 24 verified, 0 discrepancies.**
+
+What I actually checked:
+
+- **Every cited `file:line` was opened.** All ranges resolve exactly, zero line drift — `calculate_total` at `src/expense_tracker.py:55-64`, `apply_member_discount` at `:75-83`, `search_expenses` at `:86-96`, CLI dispatch at `:136-141`, and all six test ranges. All three quoted snippets are verbatim reproductions, docstrings included.
+- **Root causes are code-backed, not symptom restatements** — `range(1, len(expenses))` skipping index 0; the member branch applying `1.1` while the non-member branch is correctly untouched; `+` concatenation feeding the single-arg `conn.execute(query)` form.
+- **Empirical confirmation, not reading alone.** I ran the code: `calculate_total` → `7.5` (expected `17.5`), `total_for_category("food")` → `12.0` (expected `15.5`), `apply_member_discount(100, True)` → `110.0` (expected `90.0`), and the injection payload reproduced the researcher's concatenated query string character-for-character, returning both rows including `Secret gift`. `python3 -m unittest discover -s tests` gives exactly the 4 predicted failures out of 8 tests — no others.
+- **Independent completeness sweep.** Glob finds only two `.py` files (no second copy to fix); grep over all SQL call sites confirms line 94 is the *only* concatenated query repo-wide; grep for callers finds no call site the researcher missed.
+
+Two non-blocking notes for the Bug Planner (neither is a research error):
+
+1. **Advisory** — the proposed `LIKE ?` + `(f"%{keyword}%",)` fix closes CWE-89 and keeps `test_search_finds_matching_expense` green, but a user-supplied `%` or `_` still acts as a LIKE wildcard. That's broader-than-intended matching, not injection; strict substring semantics would need `ESCAPE` handling.
+2. **Cosmetic** — the reference list labels `:107-148` as "`main` / CLI wiring"; `main()` ends at 144 and 147-148 is the entrypoint guard. The range resolves and contains what's described.
+
+I only read and ran code — no source or research file was modified.
+
+================================================================
+ STAGE: Bug Planner   (model: sonnet)
+================================================================
+Created `context/bugs/001/implementation-plan.md` with the test command, three planned changes (calculate_total off-by-one, apply_member_discount inverted rate, search_expenses SQL injection) each with exact before/after code and root-cause rationale, an Out of Scope section covering the advisory LIKE-wildcard note and unaffected functions, and References back to the verified-research.md sections used.
+
+================================================================
+ STAGE: Bug Fixer   (model: sonnet)
+================================================================
+All three planned changes applied to `src/expense_tracker.py`, tests run after each change exactly as the plan expected (4→2→1→0 failures), and the full suite now passes 8/8. `context/bugs/001/fix-summary.md` is written with per-change before/after code, test results, manual verification steps, and references.
+
+================================================================
+ STAGE: Security Verifier   (model: opus)
+================================================================
+Report written to `context/bugs/001/security-report.md`. No source file was modified.
+
+**Verdict: no blocking issues — 0 CRITICAL, 0 HIGH, 0 MEDIUM, 3 LOW, 1 INFO.**
+
+Scope was a single file (`src/expense_tracker.py`), read in full. Note that post-fix line numbers have shifted from those recorded in `fix-summary.md` — the report cites post-fix positions.
+
+The security-relevant change (Change 3) is a correct fix: I confirmed by execution that the documented payload `nonexistent' OR '1'='1' --` now returns `[]`, so the CWE-89 injection is genuinely closed. Changes 1 and 2 are arithmetic-only and introduce no new surface. Nothing was introduced by this fix.
+
+The three LOW findings are all pre-existing weaknesses in the touched file:
+
+1. **LIKE wildcard injection survives the SQLi fix** (`search_expenses:80-83`) — the keyword is still concatenated into the LIKE *pattern* with `%` and `_` unescaped. I verified a bare `%` or `_` keyword returns every row, including the seeded `Secret gift`. This reproduces the exact outcome the regression test was written to prevent, via pattern semantics rather than SQL syntax; the test only asserts the quote payload, so it passes while this path stays open. Harmless in today's single-user CLI, but it means the test implies a stronger guarantee than the code delivers.
+2. **`expenses.db` created world-readable** (`get_connection:22`) — umask `022` yields `0644` on a file of personal financial records. Defense-in-depth; `.gitignore` already prevents any committed-data exposure.
+3. **Non-finite `amount` permanently poisons totals** (argparse `type=float`, line 110 → the changed `calculate_total`) — `inf` is accepted and stored; once present, that category's total is `inf` irrecoverably, since there's no delete command. `nan` is *not* exploitable — SQLite's `NOT NULL` constraint rejects it.
+
+Each finding has a concrete remediation in the report (for Finding 1, escape the backslash before `%`/`_`, or the escape character itself becomes injectable). Injection, secrets, insecure comparisons, and validation were explicitly considered for the changed file with per-category conclusions recorded, including the negatives. XSS/CSRF are not applicable — no web surface. Unsafe dependencies are not applicable — stdlib-only imports, no manifest exists, and the fix added no packages.
+
+Worth acting on soonest is Finding 1, mainly so the gap isn't invisible to whoever next reuses `search_expenses` where row-level access actually matters.
+
+================================================================
+ STAGE: Unit Test Generator   (model: haiku)
+================================================================
+## ✅ Unit Test Generator Complete
+
+I've successfully generated 11 new edge case tests for bug 001, bringing the total from 8 to 19 passing tests. Here's what was added:
+
+**New Tests by Changed Function:**
+- **`calculate_total`** (4 tests): empty list, single item, first/last inclusion, decimal precision
+- **`apply_member_discount`** (3 tests): zero total, rounding precision, large amounts
+- **`search_expenses`** (4 tests): empty keyword, multiple matches, special characters, case-insensitivity
+
+**Test Suite Results:**
+- ✅ All 19 tests pass in 0.003s
+- ✅ Each test uses isolated in-memory SQLite (`:memory:`)
+- ✅ No external I/O, network, or time dependencies
+- ✅ Every test maps to a specific changed function from fix-summary.md
+
+**FIRST Compliance:**
+- **Fast**: 0.003s for full suite
+- **Independent**: Each test has own setUp/tearDown DB
+- **Repeatable**: No flaky dependencies
+- **Self-validating**: All assertions with clear test names
+- **Timely**: 11 new tests target only the 3 changed functions
+
+The test-report.md is written at `context/bugs/001/test-report.md` with full compliance details.
+
+################################################################
+ PIPELINE COMPLETE — bug id: 001
+################################################################
+Outputs:
+  [ok]      context/bugs/001/research/codebase-research.md
+  [ok]      context/bugs/001/research/verified-research.md
+  [ok]      context/bugs/001/implementation-plan.md
+  [ok]      context/bugs/001/fix-summary.md
+  [ok]      context/bugs/001/security-report.md
+  [ok]      context/bugs/001/test-report.md
+
+Final test run:
+test_add_expense_persists_row (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_apply_member_discount_large_amount (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_apply_member_discount_rounds_to_two_decimals (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_apply_member_discount_zero_total (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_calculate_total_empty_list (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_calculate_total_includes_first_and_last (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_calculate_total_single_expense (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_calculate_total_sums_all_expenses (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_calculate_total_with_decimal_precision (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_list_expenses_returns_all_rows (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_member_discount_reduces_total (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_non_member_discount_is_unchanged (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_search_case_insensitive (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_search_does_not_leak_all_rows_on_injection_attempt (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_search_finds_matching_expense (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_search_returns_multiple_matches (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_search_with_empty_keyword (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_search_with_special_characters_in_keyword (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+test_total_for_category_includes_first_matching_row (test_expense_tracker.ExpenseTrackerTestCase) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.004s
+
+OK

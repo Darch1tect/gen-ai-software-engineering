@@ -35,10 +35,10 @@ cat shared/results/summary.json
 ## 3. Run the tests and check coverage
 
 ```bash
-.venv/bin/python -m pytest --cov=agents --cov=integrator --cov-report=term-missing
+.venv/bin/python -m pytest --cov=agents --cov=integrator --cov=api --cov-report=term-missing
 ```
 
-Expect 31 tests passing at ~98% coverage (gate: 80%, target: ≥90%).
+Expect 55 tests passing at ~99% coverage (gate: 80%, target: ≥90%).
 
 ## 4. Try the coverage-gate hook
 
@@ -95,9 +95,62 @@ asyncio.run(main())
 "
 ```
 
-## 7. Clean up / re-run
+## 7. Configure business rules (rules.yaml)
 
-`integrator.py` is safely re-runnable: it clears and rebuilds `shared/{input,processing,output}`
-and `shared/results/*.json` on every run, but **never truncates** `shared/results/audit.log`
-(the audit trail is meant to be durable across runs). To fully reset, delete `shared/results/`
-and re-run `integrator.py`.
+Fraud/compliance thresholds, weights, and denylists live in `rules.yaml`, loaded by the Rule
+Engine agent (`agents/rule_engine.py`) — not hardcoded in `agents/fraud_detector.py` or
+`agents/compliance_checker.py`. Edit a value (e.g. `fraud.high_value_threshold`) and re-run the
+pipeline; no code change needed:
+
+```bash
+# example: lower the high-value threshold, see a previously-low-risk transaction flip to high
+sed -i '' 's/high_value_threshold: "10000"/high_value_threshold: "1000"/' rules.yaml
+.venv/bin/python integrator.py
+cat shared/results/TXN001.json   # now risk_level "high" instead of "low"
+git checkout -- rules.yaml       # revert
+```
+
+## 8. Run the REST API
+
+`api/app.py` (FastAPI) wraps the pipeline behind HTTP endpoints:
+
+```bash
+.venv/bin/uvicorn api.app:app --port 8811
+```
+
+Then, from another terminal:
+
+```bash
+curl http://127.0.0.1:8811/health
+curl -X POST http://127.0.0.1:8811/pipeline/run                     # batch-run sample-transactions.json
+curl http://127.0.0.1:8811/transactions                             # list every processed transaction
+curl http://127.0.0.1:8811/transactions/TXN002                      # one transaction (404 if unknown)
+curl -X POST http://127.0.0.1:8811/transactions -H "Content-Type: application/json" -d '{
+  "transaction_id": "TXN-DEMO", "timestamp": "2026-08-12T12:00:00Z",
+  "source_account": "ACC-9001", "destination_account": "ACC-9002",
+  "amount": "42.50", "currency": "USD", "transaction_type": "transfer",
+  "metadata": {"channel": "api", "country": "US"}
+}'
+```
+
+`POST /transactions` always returns `201` — a business rejection (bad currency, sanctioned
+country, etc.) is a normal outcome in the response body (`"status": "rejected"`), not an HTTP
+error.
+
+## 9. One-command demo (demo.sh)
+
+```bash
+./demo.sh
+```
+
+Zero manual steps: bootstraps `.venv` if it doesn't exist, starts the API on port 8811 (override
+with `DEMO_PORT=...`), waits for `/health`, submits every transaction from
+`sample-transactions.json` via `POST /transactions`, fetches and prints a results table via
+`GET /transactions`, then stops the server. Exit code reflects success/failure.
+
+## 10. Clean up / re-run
+
+`integrator.py` (and `POST /pipeline/run`) is safely re-runnable: it clears and rebuilds
+`shared/{input,processing,output}` and `shared/results/*.json` on every run, but **never
+truncates** `shared/results/audit.log` (the audit trail is meant to be durable across runs). To
+fully reset, delete `shared/results/` and re-run `integrator.py` or `./demo.sh`.

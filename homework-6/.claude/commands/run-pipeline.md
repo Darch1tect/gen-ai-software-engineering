@@ -19,3 +19,7 @@ Steps:
    from the settled ones.
 6. Print the contents of `shared/results/summary.json` (counts by status, settled totals by
    currency) as the final line of the report.
+
+Note: the pipeline is now 5 stages (validator → rule engine → fraud detector → compliance
+checker → settlement), with fraud/compliance thresholds read from `rules.yaml` rather than
+hardcoded — mention `rules_version` from a result if asked about which rule set was applied.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Claude Code PreToolUse hook: blocks `git push` attempts when unit test coverage
-# for agents/ and integrator.py is below 80%.
+# for agents/, integrator.py, and api/ is below 80%.
 #
 # Reads the PreToolUse JSON payload on stdin ({"tool_name": "Bash", "tool_input":
 # {"command": "..."}, ...}), only acts when the command looks like a git push, and
@@ -35,7 +35,7 @@ OUTPUT_FILE="$(mktemp)"
 trap 'rm -f "$OUTPUT_FILE"' EXIT
 
 cd "$PROJECT_ROOT"
-if ! "$PY" -m pytest --cov=agents --cov=integrator --cov-report=term-missing --cov-fail-under=80 -q \
+if ! "$PY" -m pytest --cov=agents --cov=integrator --cov=api --cov-report=term-missing --cov-fail-under=80 -q \
     > "$OUTPUT_FILE" 2>&1; then
     echo "Coverage gate FAILED — push blocked (required: 80%)." >&2
     tail -n 15 "$OUTPUT_FILE" >&2

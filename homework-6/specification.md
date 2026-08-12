@@ -68,7 +68,8 @@ transaction result and a pipeline summary report.
 ### Ending context
 - `agents/messaging.py`, `agents/transaction_validator.py`, `agents/rule_engine.py`,
   `agents/fraud_detector.py`, `agents/compliance_checker.py`, `agents/settlement_processor.py`,
-  `agents/pipeline.py` (shared per-transaction chain), `integrator.py`, `rules.yaml`.
+  `agents/pipeline.py` (shared per-transaction chain), `agents/results_query.py` (shared read
+  queries), `integrator.py`, `rules.yaml`, `api/app.py` (REST gateway), `demo.sh`.
 - `shared/results/` populated with one JSON result per input transaction plus
   `shared/results/summary.json` (a pipeline run summary: counts by status, totals, timestamp) and
   `shared/results/audit.log`.
@@ -194,3 +195,20 @@ Function to CREATE: `get_transaction_status(transaction_id: str) -> dict`,
 `list_pipeline_results() -> list[dict]`, `pipeline_summary() -> str`
 Details: Read-only against `shared/results/` — the MCP server never writes to the pipeline's
 shared directories, it only queries what the agents already produced.
+
+### 9. REST API gateway
+
+Task: REST API gateway
+Prompt: "Create a FastAPI app wrapping the pipeline behind HTTP endpoints: GET /health,
+POST /transactions (submit and synchronously process one transaction through
+agents/pipeline.py::process_transaction, 201 with status settled/rejected either way — a
+business rejection is not an HTTP error), GET /transactions/{id} (404 if unknown),
+GET /transactions (list all results), and POST /pipeline/run (batch-run
+sample-transactions.json via integrator.run_pipeline). Reuse agents/results_query.py for reads
+so this doesn't duplicate mcp/server.py's query logic."
+File to CREATE: `api/app.py`
+Function to CREATE: `submit_transaction(data: dict) -> dict`, `get_transaction(transaction_id: str) -> dict`,
+`list_transactions() -> list[dict]`, `run_full_pipeline() -> dict`
+Details: The shared/ root is an injectable FastAPI dependency (`get_shared_root`) so
+`tests/test_api.py` can isolate every test against a `tmp_path` instead of the real `shared/`
+tree, matching the isolation pattern already used for `tests/test_integration_pipeline.py`.

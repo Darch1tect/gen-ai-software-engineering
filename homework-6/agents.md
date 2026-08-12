@@ -40,6 +40,12 @@ documentation-only — code, tests, hooks, and MCP servers are all in scope from
   sanctioned-country list is a small illustrative constant. Do not present these as
   regulatory-grade logic in docs or comments — say plainly that they're capstone-scope
   approximations, per `specification.md` § Implementation Notes.
+- **Rule values live in `rules.yaml`, never as hardcoded constants in agent modules.** If you find
+  yourself adding a module-level threshold/denylist/weight to `fraud_detector.py` or
+  `compliance_checker.py`, stop — it belongs in `rules.yaml` under `fraud.*`/`compliance.*`, read
+  via `data["_rules"]` (or `agents.rule_engine.load_rules()` as a standalone fallback). This is
+  the entire point of the Rule Engine agent: changing business behavior should never require a
+  code change or a new test of the constant itself.
 
 ## 3. Code style & structure
 

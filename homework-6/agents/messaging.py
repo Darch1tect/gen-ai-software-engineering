@@ -61,6 +61,16 @@ def clear_directory(directory: Path) -> None:
         f.unlink()
 
 
+def strip_internal(data: dict) -> dict:
+    """Drop any `_`-prefixed key (e.g. `_rules`) before a transaction is persisted or returned.
+
+    Internal-only fields let agents thread working state (like the loaded rule set) through the
+    pipeline via the same dict-merge pattern as everything else, without that state leaking into
+    shared/results/ records or API responses.
+    """
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
 def log_audit(audit_log_path: Path, agent: str, transaction_id: str, outcome: str) -> None:
     """Append one JSON-line audit record. Never pass full account numbers in `outcome`."""
     audit_log_path.parent.mkdir(parents=True, exist_ok=True)

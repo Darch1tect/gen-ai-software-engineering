@@ -104,4 +104,5 @@ def test_pipeline_is_rerunnable_and_rebuilds_results(tmp_path):
     assert len(result_files) == 1
 
     audit_lines = (results_dir / "audit.log").read_text().strip().splitlines()
-    assert len(audit_lines) == 8
+    # 5 stages per settled transaction (validator, rule_engine, fraud, compliance, settlement) x 2 runs
+    assert len(audit_lines) == 10

@@ -2,6 +2,10 @@
 
 Never rejects a transaction outright — always passes it on with the score attached so
 downstream compliance/settlement agents make the final accept/reject call.
+
+Thresholds and weights come from the active rule set (see agents/rule_engine.py): if the
+pipeline already ran the Rule Engine stage, `data["_rules"]` carries it; otherwise this agent
+loads rules.yaml itself, so it stays independently callable/testable.
 """
 
 from __future__ import annotations
@@ -9,59 +13,54 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 
-HIGH_VALUE_THRESHOLD = Decimal("10000")
-ODD_HOUR_START = 0
-ODD_HOUR_END = 5  # UTC hours [0, 5) are treated as unusual timing
-
-# Simplified currency -> "home" country heuristic for the cross-border check.
-# Illustrative only (e.g. EUR has no single home country in reality).
-CURRENCY_HOME_COUNTRY = {
-    "USD": "US", "EUR": "DE", "GBP": "GB", "JPY": "JP", "CHF": "CH", "CAD": "CA",
-    "AUD": "AU", "NZD": "NZ", "CNY": "CN", "INR": "IN", "SEK": "SE", "NOK": "NO",
-    "DKK": "DK", "SGD": "SG", "HKD": "HK", "MXN": "MX", "BRL": "BR", "ZAR": "ZA",
-    "PLN": "PL", "AED": "AE",
-}
+from agents.rule_engine import load_rules
 
 
-def _is_odd_hour(timestamp: str) -> bool:
+def _is_odd_hour(timestamp: str, start: int, end: int) -> bool:
     try:
         dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     except (ValueError, AttributeError):
         return False
-    return ODD_HOUR_START <= dt.hour < ODD_HOUR_END
+    return start <= dt.hour < end
 
 
-def _is_cross_border(data: dict) -> bool:
+def _is_cross_border(data: dict, currency_home_country: dict) -> bool:
     currency = data.get("currency")
     country = (data.get("metadata") or {}).get("country")
-    home = CURRENCY_HOME_COUNTRY.get(currency)
+    home = currency_home_country.get(currency)
     return bool(home and country and home != country)
 
 
 def score_transaction(data: dict) -> dict:
     """Score a validated transaction for fraud risk. Always returns status 'risk_scored'."""
+    rules = (data.get("_rules") or load_rules())["fraud"]
+
     amount = Decimal(str(data["amount"])).copy_abs()
+    threshold = Decimal(str(rules["high_value_threshold"]))
+    weights = rules["weights"]
+    bands = rules["risk_level_bands"]
+
     factors: list[str] = []
     score = 0
 
-    high_value = amount > HIGH_VALUE_THRESHOLD
+    high_value = amount > threshold
     if high_value:
         factors.append("high_value")
-        score += 50
+        score += weights["high_value"]
 
-    if _is_odd_hour(data.get("timestamp", "")):
+    if _is_odd_hour(data.get("timestamp", ""), rules["odd_hour_start"], rules["odd_hour_end"]):
         factors.append("unusual_timing")
-        score += 25
+        score += weights["unusual_timing"]
 
-    if _is_cross_border(data):
+    if _is_cross_border(data, rules["currency_home_country"]):
         factors.append("cross_border")
-        score += 20
+        score += weights["cross_border"]
 
     score = min(score, 100)
 
-    if high_value or score >= 60:
+    if high_value or score >= bands["high"]:
         risk_level = "high"
-    elif score >= 25:
+    elif score >= bands["medium"]:
         risk_level = "medium"
     else:
         risk_level = "low"

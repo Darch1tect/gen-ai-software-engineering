@@ -17,6 +17,8 @@ transaction result and a pipeline summary report.
 - Transactions with an amount over 10,000 (major units, in their own currency) are flagged for
   fraud review and carry a numeric risk score (0-100) built from value, timing, and cross-border
   heuristics.
+- Fraud and compliance thresholds are configurable via `rules.yaml`, loaded and stamped onto each
+  transaction by a dedicated Rule Engine agent — changing a threshold never requires a code change.
 - Transactions are screened against a compliance policy (sanctioned-country denylist, structuring
   detection just under the $10,000 reporting threshold, disallowed transaction types) before
   settlement.
@@ -49,6 +51,11 @@ transaction result and a pipeline summary report.
   `shared/{input,processing,output,results}/`, using the standard envelope
   (`message_id`, `timestamp`, `source_agent`, `target_agent`, `message_type`, `data`) defined in
   `TASKS.md`.
+- **Rule configuration**: `rules.yaml` is the single source of truth for fraud/compliance
+  thresholds. Agents thread the loaded config through the pipeline as an internal `_rules` key on
+  the transaction dict; any key prefixed with `_` is stripped (`messaging.strip_internal`) before a
+  result is persisted to `shared/results/` or returned from the API, so the full rule set never
+  leaks into a compliance record.
 
 ## Context
 
@@ -59,8 +66,9 @@ transaction result and a pipeline summary report.
 - No pipeline code exists yet.
 
 ### Ending context
-- `agents/messaging.py`, `agents/transaction_validator.py`, `agents/fraud_detector.py`,
-  `agents/compliance_checker.py`, `agents/settlement_processor.py`, `integrator.py`.
+- `agents/messaging.py`, `agents/transaction_validator.py`, `agents/rule_engine.py`,
+  `agents/fraud_detector.py`, `agents/compliance_checker.py`, `agents/settlement_processor.py`,
+  `agents/pipeline.py` (shared per-transaction chain), `integrator.py`, `rules.yaml`.
 - `shared/results/` populated with one JSON result per input transaction plus
   `shared/results/summary.json` (a pipeline run summary: counts by status, totals, timestamp) and
   `shared/results/audit.log`.
@@ -99,13 +107,29 @@ Function to CREATE: `validate_transaction(data: dict) -> dict`
 Details: Returns a result dict with `status` ('validated' | 'rejected') and, when rejected, a
 `reason` string. Must not raise on malformed input — always returns a structured result.
 
-### 3. Fraud Detector
+### 3. Rule Engine
+
+Task: Rule Engine
+Prompt: "Create the Rule Engine agent. It must load and validate rules.yaml (version, fraud.*,
+compliance.* keys — raising a clear error on a missing file, invalid YAML, or missing required
+keys) and, as a pipeline stage, stamp the loaded rule set onto the transaction (status
+'rules_applied', rules_version, and an internal _rules key) so downstream agents read thresholds
+from config instead of hardcoded constants."
+File to CREATE: `agents/rule_engine.py`
+Function to CREATE: `load_rules(path: Path | None = None) -> dict`,
+`apply_rule_engine(data: dict, rules: dict | None = None) -> dict`
+Details: `load_rules()` with no argument reads `rules.yaml` at the project root; a custom path is
+accepted so tests can exercise malformed-config error paths without touching the real file.
+
+### 4. Fraud Detector
 
 Task: Fraud Detector
 Prompt: "Create the Fraud Detector agent. It must compute a risk score 0-100 from three factors:
-high value (amount > 10,000 in the transaction's own currency), unusual timing (UTC hour in
-00:00-05:00), and a currency/country mismatch heuristic (comparing currency's typical home
-country to metadata.country). Score >= 60 or high-value sets risk_level 'high' and flags the
+high value (amount > threshold in the transaction's own currency), unusual timing (configurable
+UTC hour window), and a currency/country mismatch heuristic (comparing currency's typical home
+country to metadata.country) — all thresholds/weights read from data['_rules']['fraud'] (falling
+back to loading rules.yaml directly if absent, so the agent stays independently callable). Score
+at or above the configured 'high' band or high-value sets risk_level 'high' and flags the
 transaction for review; otherwise 'low' or 'medium'. Never rejects a transaction outright — always
 passes it on to the compliance checker with the score attached."
 File to CREATE: `agents/fraud_detector.py`
@@ -113,20 +137,22 @@ Function to CREATE: `score_transaction(data: dict) -> dict`
 Details: Returns the input data merged with `risk_score`, `risk_level`, and `risk_factors` (list
 of triggered heuristic names) for downstream agents and the final result record.
 
-### 4. Compliance Checker
+### 5. Compliance Checker
 
 Task: Compliance Checker
 Prompt: "Create the Compliance Checker agent. It must reject (status 'rejected', with reason) any
-transaction whose metadata.country is on a small sanctioned-country denylist, or whose
-transaction_type is not in the allowed set. It must flag (not reject) structuring risk when the
-amount is within $500 of the $10,000 reporting threshold from below. Everything else passes
-through with status 'compliance_cleared'."
+transaction whose metadata.country is on the configured sanctioned-country denylist, or whose
+transaction_type is not in the configured allowed set — read from data['_rules']['compliance']
+(falling back to loading rules.yaml directly if absent). It must flag (not reject) structuring risk
+when the amount is within the configured band below the configured reporting threshold. Everything
+else passes through with status 'compliance_cleared'."
 File to CREATE: `agents/compliance_checker.py`
 Function to CREATE: `check_compliance(data: dict) -> dict`
-Details: Denylist and allowed transaction types are simple module-level constants so tests can
-exercise both the pass and reject paths deterministically.
+Details: Denylist, allowed transaction types, and thresholds all come from `rules.yaml` via the
+Rule Engine agent so tests can inject a custom rule set and exercise both the pass and reject
+paths deterministically without editing the real config file.
 
-### 5. Settlement Processor
+### 6. Settlement Processor
 
 Task: Settlement Processor
 Prompt: "Create the Settlement Processor agent, the final pipeline stage. It must mark every
@@ -139,21 +165,24 @@ Function to CREATE: `settle_transaction(data: dict) -> dict`, `write_summary(res
 Details: `write_summary` is what backs the MCP `pipeline://summary` resource, so its output shape
 must be stable and self-describing (include a `generated_at` timestamp).
 
-### 6. Integrator / Orchestrator
+### 7. Pipeline chain + Integrator / Orchestrator
 
-Task: Integrator
-Prompt: "Create the orchestrator that ties the four agents together. It must ensure the
+Task: Pipeline chain + Integrator
+Prompt: "Extract the per-transaction stage chain into a single reusable function so both the batch
+orchestrator and any future entry point (e.g. a REST API) share it. Create the orchestrator that
+ties the five agents together via that function. It must ensure the
 shared/{input,processing,output,results} directories exist, load sample-transactions.json into
 shared/input/ as standard-envelope messages, run each transaction through
-validator -> fraud detector -> compliance checker -> settlement processor in order, and print a
-run summary (counts by final status) to stdout."
-File to CREATE: `integrator.py`
-Function to CREATE: `run_pipeline(input_file: Path = Path("sample-transactions.json")) -> dict`
+validator -> rule engine -> fraud detector -> compliance checker -> settlement processor in order,
+and print a run summary (counts by final status) to stdout."
+File to CREATE: `agents/pipeline.py`, `integrator.py`
+Function to CREATE: `process_transaction(data: dict, rules: dict | None = None, audit_log: Path | None = None) -> dict`,
+`run_pipeline(input_file: Path = Path("sample-transactions.json")) -> dict`
 Details: Must be safely re-runnable (clears/rewrites `shared/input,processing,output` between
 runs) and must be importable by both `tests/test_integration_pipeline.py` and
 `.claude/commands/run-pipeline.md`'s instructions without side effects at import time.
 
-### 7. Custom MCP server
+### 8. Custom MCP server
 
 Task: Pipeline status MCP server
 Prompt: "Create a FastMCP server exposing the banking pipeline's results: a get_transaction_status

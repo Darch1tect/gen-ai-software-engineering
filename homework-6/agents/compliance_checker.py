@@ -1,22 +1,24 @@
 """Compliance Checker agent: sanctioned-country denylist, allowed transaction types,
 structuring detection just under the reporting threshold.
+
+Thresholds/lists come from the active rule set (see agents/rule_engine.py): if the pipeline
+already ran the Rule Engine stage, `data["_rules"]` carries it; otherwise this agent loads
+rules.yaml itself, so it stays independently callable/testable.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
 
-# Illustrative denylist for this capstone only — not an authoritative sanctions list.
-SANCTIONED_COUNTRIES = {"KP", "IR", "SY", "CU"}
-ALLOWED_TRANSACTION_TYPES = {"transfer", "wire_transfer", "refund"}
-STRUCTURING_THRESHOLD = Decimal("10000")
-STRUCTURING_BAND = Decimal("500")
+from agents.rule_engine import load_rules
 
 
 def check_compliance(data: dict) -> dict:
     """Reject on sanctioned country / disallowed type; flag (not reject) structuring risk."""
+    rules = (data.get("_rules") or load_rules())["compliance"]
+
     country = (data.get("metadata") or {}).get("country")
-    if country in SANCTIONED_COUNTRIES:
+    if country in rules["sanctioned_countries"]:
         return {
             **data,
             "status": "rejected",
@@ -24,7 +26,7 @@ def check_compliance(data: dict) -> dict:
         }
 
     tx_type = data.get("transaction_type")
-    if tx_type not in ALLOWED_TRANSACTION_TYPES:
+    if tx_type not in rules["allowed_transaction_types"]:
         return {
             **data,
             "status": "rejected",
@@ -32,7 +34,9 @@ def check_compliance(data: dict) -> dict:
         }
 
     amount = Decimal(str(data["amount"])).copy_abs()
-    is_structuring_risk = STRUCTURING_THRESHOLD - STRUCTURING_BAND <= amount < STRUCTURING_THRESHOLD
+    threshold = Decimal(str(rules["structuring_threshold"]))
+    band = Decimal(str(rules["structuring_band"]))
+    is_structuring_risk = threshold - band <= amount < threshold
 
     result = {**data, "status": "compliance_cleared"}
     if is_structuring_risk:

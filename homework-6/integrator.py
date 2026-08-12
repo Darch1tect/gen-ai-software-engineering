@@ -1,8 +1,9 @@
 """Orchestrator for the multi-agent banking transaction pipeline.
 
 Loads sample-transactions.json into shared/input/, then runs each transaction through
-transaction_validator -> fraud_detector -> compliance_checker -> settlement_processor,
-writing one result JSON per transaction (plus a run summary) to shared/results/.
+transaction_validator -> rule_engine -> fraud_detector -> compliance_checker ->
+settlement_processor (agents/pipeline.py::process_transaction), writing one result JSON
+per transaction (plus a run summary) to shared/results/.
 """
 
 from __future__ import annotations
@@ -11,10 +12,9 @@ import json
 from pathlib import Path
 
 from agents import messaging
-from agents.compliance_checker import check_compliance
-from agents.fraud_detector import score_transaction
-from agents.settlement_processor import settle_transaction, write_summary
-from agents.transaction_validator import validate_transaction
+from agents.pipeline import process_transaction
+from agents.rule_engine import load_rules
+from agents.settlement_processor import write_summary
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_INPUT_FILE = PROJECT_ROOT / "sample-transactions.json"
@@ -47,33 +47,11 @@ def run_pipeline(input_file: Path = DEFAULT_INPUT_FILE, shared_root: Path = DEFA
         message = messaging.new_message("integrator", "transaction_validator", "transaction", txn)
         messaging.write_message(input_dir, message)
 
-    results: list[dict] = []
-    for message in messaging.read_messages(input_dir):
-        data = message["data"]
-        tx_id = data.get("transaction_id") or message["message_id"]
-        masked_source = messaging.mask_account(data.get("source_account", ""))
-
-        validated = validate_transaction(data)
-        messaging.log_audit(audit_log, "transaction_validator", tx_id, validated["status"])
-        if validated["status"] == "rejected":
-            results.append(validated)
-            continue
-
-        scored = score_transaction(validated)
-        messaging.log_audit(
-            audit_log, "fraud_detector", tx_id,
-            f"risk_level={scored['risk_level']} src={masked_source}",
-        )
-
-        compliant = check_compliance(scored)
-        messaging.log_audit(audit_log, "compliance_checker", tx_id, compliant["status"])
-        if compliant["status"] == "rejected":
-            results.append(compliant)
-            continue
-
-        settled = settle_transaction(compliant)
-        messaging.log_audit(audit_log, "settlement_processor", tx_id, settled["status"])
-        results.append(settled)
+    rules = load_rules()
+    results: list[dict] = [
+        process_transaction(message["data"], rules=rules, audit_log=audit_log)
+        for message in messaging.read_messages(input_dir)
+    ]
 
     for result in results:
         tx_id = result.get("transaction_id") or "unknown"

@@ -1,0 +1,52 @@
+# Configurable business rules for the Rule Engine agent (agents/rule_engine.py).
+# Edit this file to change fraud/compliance thresholds without touching code.
+# Values below reproduce the pipeline's original hardcoded behavior exactly.
+
+version: 1
+
+fraud:
+  # Amount above which a transaction is treated as high-value (major units, own currency).
+  high_value_threshold: "10000"
+  # UTC hour window [start, end) treated as "unusual timing".
+  odd_hour_start: 0
+  odd_hour_end: 5
+  # Points added per triggered risk factor.
+  weights:
+    high_value: 50
+    unusual_timing: 25
+    cross_border: 20
+  # Minimum score for each risk level (score is also capped at 100).
+  risk_level_bands:
+    high: 60
+    medium: 25
+  # Simplified currency -> "home" country heuristic for the cross-border check.
+  # Illustrative only (e.g. EUR has no single home country in reality).
+  currency_home_country:
+    USD: US
+    EUR: DE
+    GBP: GB
+    JPY: JP
+    CHF: CH
+    CAD: CA
+    AUD: AU
+    NZD: NZ
+    CNY: CN
+    INR: IN
+    SEK: SE
+    NOK: NO
+    DKK: DK
+    SGD: SG
+    HKD: HK
+    MXN: MX
+    BRL: BR
+    ZAR: ZA
+    PLN: PL
+    AED: AE
+
+compliance:
+  # Illustrative denylist for this capstone only — not an authoritative sanctions list.
+  sanctioned_countries: [KP, IR, SY, CU]
+  allowed_transaction_types: [transfer, wire_transfer, refund]
+  # Structuring: flag (not reject) amounts within `structuring_band` below `structuring_threshold`.
+  structuring_threshold: "10000"
+  structuring_band: "500"
